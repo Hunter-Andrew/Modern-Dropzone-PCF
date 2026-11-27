@@ -29,7 +29,12 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ src, alt, onClose }) =
   const [rotation, setRotation] = React.useState(0);
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
   const [dragging, setDragging] = React.useState(false);
-  const drag = React.useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
+  const drag = React.useRef<{
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  } | null>(null);
 
   const reset = () => {
     setScale(1);
@@ -79,7 +84,13 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ src, alt, onClose }) =
       overlay={{ styles: { root: { backgroundColor: "rgba(0,0,0,0.85)" } } }}
     >
       <div
-        style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", touchAction: "none" }}
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          overflow: "hidden",
+          touchAction: "none",
+        }}
         onWheel={onWheel}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

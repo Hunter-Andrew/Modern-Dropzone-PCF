@@ -3,28 +3,55 @@ import { IInputs } from "./generated/ManifestTypes";
 import { EntityMetadata } from "./Interfaces";
 import { ActivityType } from "./Interfaces";
 
+type Context = ComponentFramework.Context<IInputs>;
+
+/**
+ * The parts of `context.page` this control uses. Model-driven apps provide
+ * `page`, but the PCF type definitions don't declare it.
+ */
+export interface PageInfo {
+  entityId: string;
+  entityTypeName: string;
+  getClientUrl(): string;
+}
+
+export function getPage(context: Context | undefined): PageInfo | undefined {
+  return (context as unknown as { page?: PageInfo } | undefined)?.page;
+}
+
+/** The id of the record the form shows, or "" when it hasn't been saved yet. */
+export function getRecordId(context: Context | undefined): string {
+  return getPage(context)?.entityId ?? "";
+}
+
+/** The message of a caught error, whatever was thrown. */
+export function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export async function getEntityMetadata(
-  context: ComponentFramework.Context<IInputs>
+  context: ComponentFramework.Context<IInputs>,
 ): Promise<EntityMetadata | null> {
-  if (!context || !(context as any).page) {
+  const page = getPage(context);
+  if (!page) {
     console.warn("Component Framework context is not available. (utils)");
     return null;
   }
 
-  const dynamicsUrl = (context as any).page.getClientUrl();
+  const dynamicsUrl = page.getClientUrl();
   if (!dynamicsUrl) {
     console.error("Unable to retrieve client URL.");
     return null;
   }
 
-  const entityName = (context as any).page.entityTypeName;
+  const entityName = page.entityTypeName;
   if (!entityName) {
     console.error("Unable to retrieve entity type name.");
     return null;
   }
   const apiUrl = `${dynamicsUrl}/api/data/v9.0/EntityDefinitions(LogicalName='${entityName}')?$select=SchemaName,LogicalCollectionName`;
 
-  const entityId = (context as any).page.entityId;
+  const entityId = page.entityId;
   if (!entityId) {
     console.error("Unable to retrieve entity ID.");
     return null;
@@ -77,9 +104,7 @@ const SHAREPOINT_INVALID_CHARS = /["*:<>?/\\|]/;
 /** Returns true if the name can be used for a SharePoint folder. */
 export function isValidSharePointFolderName(name: string): boolean {
   return (
-    name.trim().length > 0 &&
-    !SHAREPOINT_INVALID_CHARS.test(name) &&
-    !/^[\s.]|[\s.]$/.test(name)
+    name.trim().length > 0 && !SHAREPOINT_INVALID_CHARS.test(name) && !/^[\s.]|[\s.]$/.test(name)
   );
 }
 
@@ -87,23 +112,7 @@ export function isPDF(mime: string) {
   return mime === "application/pdf";
 }
 
-export function isExcel(mime: string) {
-  return (
-    mime ===
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-    mime === "application/vnd.ms-excel" ||
-    mime === "text/csv"
-  );
-}
-
 export function isImage(mime: string) {
-  const base64Prefix = "data:image/";
-  if (mime.startsWith(base64Prefix)) {
-    const parts = mime.split(base64Prefix);
-    if (parts.length > 2) {
-      mime = base64Prefix + parts[1];
-    }
-  }
   return mime.startsWith("image/");
 }
 
@@ -128,54 +137,19 @@ export function isActivityType(schemaName: string): schemaName is ActivityType {
     "appointmentrecurrence",
   ].includes(schemaName);
 }
-export function getControlValue(
-  context: ComponentFramework.Context<any>,
-  parameter: string
-) {
-  return context.parameters[parameter]?.raw || "";
+export function getControlValue(context: Context, parameter: keyof IInputs) {
+  const property = context.parameters[parameter];
+  return (property && "raw" in property ? property.raw : null) || "";
 }
-const delay = (ms: number): Promise<void> => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
+type Values<T> = T extends string ? T : { [K in keyof T]: Values<T[K]> }[keyof T];
+export type LocalizationKey = Values<typeof LocalStrings>;
+/** Looks up a localized string; passed to child components as `t`. */
+export type Translate = (key: LocalizationKey) => string;
 
-export async function focusSPDocumentsAndRestore() {
-  const originalTab = getFocusedTab();
-  const navItem = Xrm.Page.ui.navigation.items.get("navSPDocuments");
-  
-  if (navItem) {
-    navItem.setFocus();
-    await delay(1000);
-    setTimeout(function () {
-      if (originalTab) {
-        originalTab.setFocus();
-        window.location.reload();
-      }
-    }, 1000);
-  } else {
-    console.error("SP Documents navigation item not found.");
-  }
-}
+export const getLocalString = (context: Context, key: LocalizationKey): string =>
+  context.resources.getString(key);
 
-function getFocusedTab() {
-  const tabs = Xrm.Page.ui.tabs;
-
-  if (tabs.getLength() > 0) {
-    const firstTab = tabs.get(0);
-    return firstTab;
-  } else {
-    return null;
-  }
-}
-
-  type Values<T> = T extends string ? T : { [K in keyof T]: Values<T[K]> }[keyof T];
-  type LocalizationKey = Values<typeof LocalStrings>;
-
-  export const getLocalString = (
-  context: ComponentFramework.Context<any>,
-  key: LocalizationKey
-): string => context.resources.getString(key);
-
-export function b64toBlob(b64Data: string, contentType = '', sliceSize = 512) {
+export function b64toBlob(b64Data: string, contentType = "", sliceSize = 512) {
   if (b64Data.startsWith("data:application/pdf;base64,")) {
     b64Data = b64Data.replace("data:application/pdf;base64,", "");
   }
@@ -194,4 +168,3 @@ export function b64toBlob(b64Data: string, contentType = '', sliceSize = 512) {
 
   return new Blob(byteArrays, { type: contentType });
 }
-

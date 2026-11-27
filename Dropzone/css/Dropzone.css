@@ -76,13 +76,6 @@ p.file-size {
   justify-content: center;
 }
 
-.action-icons {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0px;
-}
-
 .icon-button {
   min-width: 32px;
   height: 32px;
@@ -110,33 +103,12 @@ p.file-size {
   }
 }
 
-@keyframes easeOutToBottom {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-}
-
 .easeIn {
   animation: easeInFromBottom 0.5s ease forwards;
 }
 
-.easeOut {
-  animation: easeOutToBottom 0.5s ease forwards;
-}
-
 .wideRibbon {
   width: 100%;
-}
-
-.selectedFilesBox {
-  position: absolute;
-  right: 0;
-  bottom: 5px;
 }
 
 .spinner-box {
@@ -145,11 +117,7 @@ p.file-size {
   justify-content: center;
 }
 
-.preview-modal-content {
-  height: 100% !important;
-}
-
-.scrollable-area{
+.scrollable-area {
   height: 96%;
   display: flex;
   flex-direction: column;

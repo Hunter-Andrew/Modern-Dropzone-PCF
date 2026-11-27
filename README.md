@@ -88,17 +88,38 @@ npm run build         # build the control into out/controls (also runs ESLint)
 npm run start:watch   # open the PCF test harness with live reload
 ```
 
-To produce an importable solution zip (managed, per `ModernDropzone.cdsproj`):
+To produce importable solution zips (unmanaged and managed):
 
 ```bash
 cd Solution/ModernDropzone
-dotnet build -c Release   # output: bin/Release/ModernDropzone.zip
+dotnet build -c Release -p:SolutionPackageType=Both
+# output: bin/Release/ModernDropzone.zip (unmanaged) and ModernDropzone_managed.zip
 ```
+
+### Tests
+
+```bash
+npm test
+```
+
+Unit tests live in `tests/` and run with Jest against a mocked PCF context, so they need no Dynamics environment. They cover the data loading (`Dropzone/Landing/landingData.ts`), the display helpers and the shared utilities.
+
+### Formatting
+
+Code is formatted with Prettier. Run `npm run format` before committing; CI fails on unformatted code (`npm run format:check`).
+
+### CI
+
+The [Build solution](.github/workflows/build-solution.yml) workflow runs on every push, to any branch. It builds both zips and attaches them to the run as the `ModernDropzone-solution` artifact (Actions tab → the run → Artifacts).
+
+To publish a release, bump the version (see below), then push a tag starting with `v`, for example `v2.9.6`. The workflow creates a GitHub release with the zips attached.
 
 ### Versioning
 
-When releasing, bump the version in all three places so Dataverse picks up the update:
+The version is written in several files: `package.json`, the control manifest, the solution's `Solution.xml` and `Dropzone/version.ts`. Dataverse only picks up a new build of the control when the manifest version goes up. Set it everywhere at once with:
 
-- `package.json` → `version`
-- `Dropzone/ControlManifest.Input.xml` → `<control ... version="">`
-- `Solution/ModernDropzone/src/Other/Solution.xml` → `<Version>`
+```bash
+npm run version:set -- 2.9.6
+```
+
+CI fails if the files disagree (`npm run version:check`), or if a release tag doesn't match the version.
