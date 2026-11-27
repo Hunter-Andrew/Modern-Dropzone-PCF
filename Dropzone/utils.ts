@@ -115,13 +115,6 @@ export function isPDF(mime: string) {
 }
 
 export function isImage(mime: string) {
-  const base64Prefix = "data:image/";
-  if (mime.startsWith(base64Prefix)) {
-    const parts = mime.split(base64Prefix);
-    if (parts.length > 2) {
-      mime = base64Prefix + parts[1];
-    }
-  }
   return mime.startsWith("image/");
 }
 
