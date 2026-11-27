@@ -57,6 +57,32 @@ export async function getEntityMetadata(
   }
 }
 
+/**
+ * Escapes a value for use inside a FetchXML attribute or text node.
+ * Without this, names containing characters such as & " ' < > produce invalid
+ * FetchXML and the query fails (or matches the wrong records).
+ */
+export function escapeXml(value: string | null | undefined): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+// Characters SharePoint does not allow in file or folder names.
+const SHAREPOINT_INVALID_CHARS = /["*:<>?/\\|]/;
+
+/** Returns true if the name can be used for a SharePoint folder. */
+export function isValidSharePointFolderName(name: string): boolean {
+  return (
+    name.trim().length > 0 &&
+    !SHAREPOINT_INVALID_CHARS.test(name) &&
+    !/^[\s.]|[\s.]$/.test(name)
+  );
+}
+
 export function isPDF(mime: string) {
   return mime === "application/pdf";
 }

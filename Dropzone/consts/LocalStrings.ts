@@ -88,5 +88,6 @@ export const LocalStrings = {
         Message_Create_Folder_Success:"Toast__Message_Create_Folder_Success",
         Message_Create_Folder_Error:"Toast__Message_Create_Folder_Error",
         Message_Create_Folder_Empty_Error:"Toast__Message_Create_Folder_Empty_Error",
+        Message_Create_Folder_Invalid_Name_Error:"Toast__Message_Create_Folder_Invalid_Name_Error",
     },
 } as const;

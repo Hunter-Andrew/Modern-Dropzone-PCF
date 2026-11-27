@@ -23,7 +23,6 @@ import {
   GenericActionResponse,
   NoteView,
 } from "../Interfaces";
-import { Img } from "react-image";
 import {
   isPDF,
   isImage,
@@ -32,6 +31,8 @@ import {
   focusSPDocumentsAndRestore,
   getLocalString,
   b64toBlob,
+  escapeXml,
+  isValidSharePointFolderName,
 } from "../utils";
 import {
   IContextualMenuItem,
@@ -74,15 +75,14 @@ import {
   IButtonProps,
 } from "@fluentui/react";
 import {
+  FILE_ICON_SIZE,
   getFileTypeIconProps,
   initializeFileTypeIcons,
-} from "@uifabric/file-type-icons";
-import { Tooltip } from "react-tippy";
-import "react-tippy/dist/tippy.css";
+} from "./fileTypeIcons";
 import toast, { Toaster } from "react-hot-toast";
 import FolderIcon from "./FolderIcon";
 import { getEntityMetadata, getControlValue } from "../utils";
-import ReactViewer from 'react-viewer';
+import { ImageViewer } from "./ImageViewer";
 import { LocalStrings } from "../consts/LocalStrings";
 export interface LandingProps {
   context?: ComponentFramework.Context<IInputs>;
@@ -208,7 +208,6 @@ const EXCLUDED_NOTE_VIEWS = new Set<string>([
 
 export class Landing extends Component<LandingProps, LandingState> {
   private targetRef: React.RefObject<HTMLDivElement>;
-  private viewerHost = React.createRef<HTMLDivElement>();
   constructor(props: LandingProps) {
     super(props);
     initializeFileTypeIcons();
@@ -881,7 +880,7 @@ export class Landing extends Component<LandingProps, LandingState> {
 
   addRegardingFilter(fetchXml: string, recordId: string): string {
     const newCond =
-      `<condition attribute="objectid" operator="eq" value="${recordId}"/>`;
+      `<condition attribute="objectid" operator="eq" value="${escapeXml(recordId)}"/>`;
 
     if (fetchXml.match(/<filter[^>]*>/i)) {
       return fetchXml.replace(/(<filter[^>]*>)/i, `$1${newCond}`);
@@ -1230,6 +1229,10 @@ export class Landing extends Component<LandingProps, LandingState> {
     const { newFolderName, currentFolderPath } = this.state;
     if (!newFolderName) {
       toast.error(getLocalString(this.props.context!, LocalStrings.Toast.Message_Create_Folder_Empty_Error));
+      return;
+    }
+    if (!isValidSharePointFolderName(newFolderName)) {
+      toast.error(getLocalString(this.props.context!, LocalStrings.Toast.Message_Create_Folder_Invalid_Name_Error));
       return;
     }
     let defaultLocation = this.isDefaultLocation();
@@ -1807,24 +1810,17 @@ export class Landing extends Component<LandingProps, LandingState> {
                     <Icon
                       {...getFileTypeIconProps({
                         extension: this.getFileExtension(file.fullname),
-                        size: 96,
+                        size: FILE_ICON_SIZE,
                         imageFileType: "svg",
                       })}
                     />
                   )}
                 </div>
-                <Tooltip
-                  title={file.fullname}
-                  position="top"
-                  trigger="mouseenter"
-                  arrow={true}
-                  arrowSize="regular"
-                  theme="light"
-                >
+                <TooltipHost content={file.fullname}>
                   <p className="file-name">
                     {this.middleEllipsis(file.fullname, 18, true)}
                   </p>
-                </Tooltip>
+                </TooltipHost>
                 {file.filetype !== "folder" ? (
                   <p className="file-size">
                     {this.formatFileSize(file.filesize)}
@@ -1863,22 +1859,15 @@ export class Landing extends Component<LandingProps, LandingState> {
               <Icon
                 {...getFileTypeIconProps({
                   extension: this.getFileExtension(file.filename),
-                  size: 96,
+                  size: FILE_ICON_SIZE,
                   imageFileType: "svg",
                 })}
               />
-              <Tooltip
-                title={file.filename}
-                position="top"
-                trigger="mouseenter"
-                arrow={true}
-                arrowSize="regular"
-                theme="light"
-              >
+              <TooltipHost content={file.filename}>
                 <p className="file-name">
                   {this.middleEllipsis(file.filename)}
                 </p>
-              </Tooltip>
+              </TooltipHost>
               <p className="file-size">{this.formatFileSize(file.filesize)}</p>
             </div>
           ))}
@@ -2017,17 +2006,11 @@ export class Landing extends Component<LandingProps, LandingState> {
       <>
         <Toaster position="top-right" reverseOrder={false} />
         {isImage(previewFile?.mimetype ?? "") && previewFile && (
-          <ReactViewer
-            visible
+          <ImageViewer
             onClose={this.closeDialog}
-            container={this.viewerHost.current!}
-            images={[{
-              src: previewFile.documentbody.replace(
-                /(data:image\/[a-zA-Z]+;base64,).*?\1/, '$1'),
-              alt: previewFile.filename
-            }]}
-            rotatable scalable zoomable
-            noNavbar={true}
+            src={previewFile.documentbody.replace(
+              /(data:image\/[a-zA-Z]+;base64,).*?\1/, '$1')}
+            alt={previewFile.filename}
           />
         )}
 
@@ -2050,7 +2033,6 @@ export class Landing extends Component<LandingProps, LandingState> {
             }}
           >
             <div className={"scrollable-area"}>
-              <div ref={this.viewerHost} style={{ position: 'relative', height: 0 }} />
               {isPDF(previewFile.mimetype) && (
                 previewFile.documentbody.length > 1_000_000 ? (
                   (() => {
