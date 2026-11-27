@@ -104,8 +104,10 @@ To publish a release, bump the version (see below), then push a tag starting wit
 
 ### Versioning
 
-When releasing, bump the version in all three places so Dataverse picks up the update:
+The version is written in several files: `package.json`, the control manifest, the solution's `Solution.xml` and `Dropzone/version.ts`. Dataverse only picks up a new build of the control when the manifest version goes up. Set it everywhere at once with:
 
-- `package.json` → `version`
-- `Dropzone/ControlManifest.Input.xml` → `<control ... version="">`
-- `Solution/ModernDropzone/src/Other/Solution.xml` → `<Version>`
+```bash
+npm run version:set -- 2.9.6
+```
+
+CI fails if the files disagree (`npm run version:check`), or if a release tag doesn't match the version.
