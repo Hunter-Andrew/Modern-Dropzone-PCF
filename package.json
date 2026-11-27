@@ -12,6 +12,8 @@
     "start:watch": "pcf-scripts start watch",
     "refreshTypes": "pcf-scripts refreshTypes",
     "test": "jest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "version:check": "node scripts/version.js check",
     "version:set": "node scripts/version.js set"
   },
@@ -37,6 +39,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "pcf-scripts": "^1",
     "pcf-start": "^1",
+    "prettier": "3.10.1",
     "react": "16.8.6",
     "react-dom": "16.8.6",
     "style-loader": "^4.0.0",

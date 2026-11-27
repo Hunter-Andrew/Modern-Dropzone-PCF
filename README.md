@@ -104,6 +104,10 @@ npm test
 
 Unit tests live in `tests/` and run with Jest against a mocked PCF context, so they need no Dynamics environment. They cover the data loading (`Dropzone/Landing/landingData.ts`), the display helpers and the shared utilities.
 
+### Formatting
+
+Code is formatted with Prettier. Run `npm run format` before committing; CI fails on unformatted code (`npm run format:check`).
+
 ### CI
 
 The [Build solution](.github/workflows/build-solution.yml) workflow runs on every push, to any branch. It builds both zips and attaches them to the run as the `ModernDropzone-solution` artifact (Actions tab → the run → Artifacts).

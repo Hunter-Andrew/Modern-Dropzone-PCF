@@ -1,0 +1,11 @@
+# Generated or managed by tools
+node_modules/
+out/
+bin/
+obj/
+Dropzone/generated/
+Solution/
+package-lock.json
+
+# Prose is left as written
+*.md
