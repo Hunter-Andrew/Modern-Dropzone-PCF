@@ -75,9 +75,10 @@ import {
   IButtonProps,
 } from "@fluentui/react";
 import {
+  FILE_ICON_SIZE,
   getFileTypeIconProps,
   initializeFileTypeIcons,
-} from "@uifabric/file-type-icons";
+} from "./fileTypeIcons";
 import toast, { Toaster } from "react-hot-toast";
 import FolderIcon from "./FolderIcon";
 import { getEntityMetadata, getControlValue } from "../utils";
@@ -1809,7 +1810,7 @@ export class Landing extends Component<LandingProps, LandingState> {
                     <Icon
                       {...getFileTypeIconProps({
                         extension: this.getFileExtension(file.fullname),
-                        size: 96,
+                        size: FILE_ICON_SIZE,
                         imageFileType: "svg",
                       })}
                     />
@@ -1858,7 +1859,7 @@ export class Landing extends Component<LandingProps, LandingState> {
               <Icon
                 {...getFileTypeIconProps({
                   extension: this.getFileExtension(file.filename),
-                  size: 96,
+                  size: FILE_ICON_SIZE,
                   imageFileType: "svg",
                 })}
               />

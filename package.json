@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@fluentui/react": "^8.29.0",
+    "@fluentui/react-file-type-icons": "^8.11.11",
     "@types/xrm": "^9.0.81",
-    "@uifabric/file-type-icons": "^7.10.11",
     "react-dropzone": "^14.2.3",
     "react-hot-toast": "^2.4.1"
   },
