@@ -4,17 +4,13 @@ import { IInputs } from "../generated/ManifestTypes";
 import "../css/Dropzone.css";
 import {
   createRelatedNote,
-  getRelatedNotes,
   updateRelatedNote,
   deleteRelatedNote,
-  getSharePointLocations,
-  getSharePointFolderData,
   createSharePointDocument,
   deleteSharePointDocument,
   createSharePointFolder,
   createSharePointLocation,
   createAtivityDocument,
-  getNoteViews
 } from "../DataverseActions";
 import {
   DocumentLocation,
@@ -29,11 +25,9 @@ import {
   isPDF,
   isImage,
   createDataUri,
-  isActivityType,
   getLocalString,
   b64toBlob,
   isValidSharePointFolderName,
-  getEntityMetadata,
   getControlValue,
   LocalizationKey,
 } from "../utils";
@@ -59,16 +53,26 @@ import {
   PdfPreviewModal,
   RenameNoteDialog,
 } from "./Dialogs";
+import { filterAndSortSharePointItems, filterNotes } from "./landingHelpers";
 import {
-  addRegardingFilter,
-  filterAndSortSharePointItems,
-  filterNotes,
-} from "./landingHelpers";
+  delay,
+  hasNoSharePointLocation,
+  isActivityRecord,
+  loadNoteViews,
+  loadNotes,
+  loadSharePointFolder,
+  loadSharePointLocations,
+  readRememberLocation,
+  readUserSettings,
+  saveUserSettings,
+  shouldFilterByLocation,
+  waitForSharePointLocation,
+} from "./landingData";
 import { LocalStrings } from "../consts/LocalStrings";
 
-// Landing is the container for the control: it owns all state, loads data from
-// Dataverse/SharePoint and handles user actions. The UI pieces live in
-// Ribbon, FileGrid, FooterBar, Dialogs and ImageViewer.
+// Landing is the container for the control: it owns all state and handles user
+// actions. Reading data lives in landingData; the UI pieces live in Ribbon,
+// FileGrid, FooterBar, Dialogs and ImageViewer.
 
 export interface LandingProps {
   context?: ComponentFramework.Context<IInputs>;
@@ -126,14 +130,6 @@ const isValidBase64 = (str: string) => {
 // PDFs larger than this are opened in a new tab instead of the preview dialog.
 const MAX_INLINE_PDF_LENGTH = 1_000_000;
 
-const EXCLUDED_NOTE_VIEWS = new Set<string>([
-  "Notes Associated View",
-  "Notes",
-  "Notes Advanced Find View",
-  "Notes Lookup View",
-  "Quick Find Annotations",
-]);
-
 export class Landing extends Component<LandingProps, LandingState> {
   private targetRef: React.RefObject<HTMLDivElement>;
   constructor(props: LandingProps) {
@@ -182,7 +178,6 @@ export class Landing extends Component<LandingProps, LandingState> {
     this.downloadFile = this.downloadFile.bind(this);
     this.toggleSharePointDocLoc = this.toggleSharePointDocLoc.bind(this);
     this.toggleTooltip = this.toggleTooltip.bind(this);
-    this.getSharePointLocations = this.getSharePointLocations.bind(this);
     this.getSharePointData = this.getSharePointData.bind(this);
     this.handleFolderClick = this.handleFolderClick.bind(this);
     this.handleBackClick = this.handleBackClick.bind(this);
@@ -196,7 +191,6 @@ export class Landing extends Component<LandingProps, LandingState> {
     this.onCalloutDismiss = this.onCalloutDismiss.bind(this);
     this.toggleRememberLocation = this.toggleRememberLocation.bind(this);
     this.handleRemoveFolderClick = this.handleRemoveFolderClick.bind(this);
-    this.isActivityType = this.isActivityType.bind(this);
     this.addFileAttachmentToActivity =
       this.addFileAttachmentToActivity.bind(this);
     this.targetRef = React.createRef();
@@ -341,10 +335,10 @@ export class Landing extends Component<LandingProps, LandingState> {
       }),
       async () => {
         try {
-          const data = await getSharePointFolderData(
+          const data = await loadSharePointFolder(
             this.props.context!,
             folderPath,
-            this.state.selectedDocumentLocation!,
+            this.state.selectedDocumentLocation,
             this.state.selectedDocumentLocationName
           );
           this.setState({
@@ -374,10 +368,10 @@ export class Landing extends Component<LandingProps, LandingState> {
       async () => {
         try {
           const { currentFolderPath } = this.state;
-          const data = await getSharePointFolderData(
+          const data = await loadSharePointFolder(
             this.props.context!,
             currentFolderPath,
-            this.state.selectedDocumentLocation!,
+            this.state.selectedDocumentLocation,
             this.state.selectedDocumentLocationName
           );
           this.setState({ sharePointData: data });
@@ -390,8 +384,8 @@ export class Landing extends Component<LandingProps, LandingState> {
     );
   };
 
-  private async getSharePointLocations(): Promise<void> {
-    const response = await getSharePointLocations(this.props.context!);
+  private async loadSharePointLocations(): Promise<void> {
+    const response = await loadSharePointLocations(this.props.context!);
 
     if (response.length === 0) {
       this.setState({
@@ -412,16 +406,14 @@ export class Landing extends Component<LandingProps, LandingState> {
     });
   }
 
-  private isDefaultLocation() {
-    if (
-      this.state.documentLocations.length === 1 &&
-      this.state.selectedDocumentLocationName === "Documents on Default Site 1"
-    ) {
-      return false;
-    } else {
-      return true;
-    }
+  /** See shouldFilterByLocation. */
+  private filterByLocation(): boolean {
+    return shouldFilterByLocation(
+      this.state.documentLocations,
+      this.state.selectedDocumentLocationName
+    );
   }
+
   private async getSharePointData(popFolderStack = false): Promise<void> {
     if (!this.state.selectedDocumentLocation) {
       this.setState({ sharePointData: [], isLoading: false });
@@ -437,123 +429,39 @@ export class Landing extends Component<LandingProps, LandingState> {
       },
       async () => {
         const { currentFolderPath } = this.state;
-        const defaultLocation = this.isDefaultLocation();
-        const data = await getSharePointFolderData(
+        const data = await loadSharePointFolder(
           this.props.context!,
           currentFolderPath,
           this.state.selectedDocumentLocation,
           this.state.selectedDocumentLocationName,
-          defaultLocation
+          this.filterByLocation()
         );
         this.setState({ sharePointData: data });
       }
     );
   }
 
-  async isActivityType(): Promise<boolean> {
-    const metadata = await getEntityMetadata(this.props.context!);
-    if (!metadata) {
-      return false;
-    }
-    const isActivity = isActivityType(metadata.schemaName);
-    if (isActivity) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  async getUserSettings(): Promise<any> {
-    const settings = localStorage.getItem("userSettings");
-    return settings ? JSON.parse(settings) : null;
-  }
-
-  async checkUserSettings(): Promise<boolean | undefined> {
-    const settings = localStorage.getItem("userSettings");
-
-    if (settings) {
-      const parsedSettings = JSON.parse(settings);
-      const metadata = await getEntityMetadata(this.props.context!);
-      if (
-        parsedSettings.tableName !== metadata?.schemaName ||
-        parsedSettings.entityId !== metadata?.entityId
-      ) {
-        return undefined;
-      }
-      if (parsedSettings.tableName === metadata?.schemaName) {
-        if (typeof parsedSettings.NotesOrSharePoint === "undefined") {
-          return parsedSettings.NotesOrSharePoint;
-        } else {
-          return undefined;
-        }
-      } else {
-        return false;
-      }
-    } else {
-      return false;
-    }
-  }
-
-  async checkSharePointIntegration(): Promise<boolean> {
-    const response = await getSharePointLocations(this.props.context!);
-    return response.length === 0 ? true : false;
-  }
-
-
-
   async componentDidMount() {
+    const { context } = this.props;
     this.setState({ isViewsLoading: true });
 
     const defaultNotesViewName =
-      (getControlValue(this.props.context!, "defaultNotesView") as string) ?? ""
-        .trim();
+      ((getControlValue(context!, "defaultNotesView") as string) ?? "").trim();
+    const { views, defaultViewId } = await loadNoteViews(context!, defaultNotesViewName);
+    this.setState({
+      noteViews: views,
+      selectedViewId: defaultViewId,
+      isViewsLoading: false,
+    });
 
-    try {
-      const res = await getNoteViews(this.props.context!);
-
-      if (res.success) {
-        let availableViews = res.data.filter(
-          (v) => !EXCLUDED_NOTE_VIEWS.has(v.name)
-        );
-
-        const allNotes = availableViews.find(
-          (v) => v.name.toLowerCase() === "all notes"
-        );
-        const otherViews = availableViews.filter(
-          (v) => v.name.toLowerCase() !== "all notes"
-        );
-        availableViews = allNotes ? [allNotes, ...otherViews] : availableViews;
-
-        const findByName = (name: string) =>
-          availableViews.find((v) => v.name.toLowerCase() === name.toLowerCase());
-
-        const defaultView =
-          (defaultNotesViewName && findByName(defaultNotesViewName)) ||
-          findByName("All Notes") ||
-          availableViews[0];
-
-        this.setState({
-          noteViews: availableViews,
-          selectedViewId: defaultView?.savedqueryid,
-          isViewsLoading: false,
-        });
-      } else {
-        console.warn(res.message);
-        this.setState({ isViewsLoading: false });
-      }
-    } catch (err) {
-      console.error("Failed to load note views:", err);
-      this.setState({ isViewsLoading: false });
-    }
-
-
-    const sharePointEnabled = await this.checkSharePointIntegration();
-    const userPreference = await this.checkUserSettings();
-    const settings = await this.getUserSettings();
-    const isActivity = await this.isActivityType();
-    let sharePointEnabledParameter =
-      getControlValue(this.props.context!, "enableSharePointDocuments") ===
-      true;
+    // Named for what it controls: the SharePoint toggle is disabled while the
+    // record has no SharePoint location.
+    const sharePointEnabled = await hasNoSharePointLocation(context!);
+    const userPreference = await readRememberLocation(context!);
+    const settings = readUserSettings();
+    const isActivity = await isActivityRecord(context!);
+    const sharePointEnabledParameter =
+      getControlValue(context!, "enableSharePointDocuments") === true;
     this.setState({ sharePointEnabledParameter });
     if (
       settings &&
@@ -638,21 +546,15 @@ export class Landing extends Component<LandingProps, LandingState> {
     return !!entityId && !this.props.isDisabled;
   }
 
-  private async waitForSharePointLocation(attempts = 8, intervalMs = 3000): Promise<void> {
-    for (let i = 0; i < attempts; i++) {
-      await this.delay(intervalMs);
-      if (this.isUnmounted) return;
-      try {
-        const locations = await getSharePointLocations(this.props.context!);
-        if (locations.length > 0) {
-          this.setState({ sharePointEnabled: false });
-          if (this.state.sharePointDocLoc) {
-            await this.loadExistingFiles();
-          }
-          return;
-        }
-      } catch (err) {
-        console.warn("Checking for SharePoint document location failed:", err);
+  private async waitForSharePointLocation(): Promise<void> {
+    const found = await waitForSharePointLocation(
+      this.props.context!,
+      () => this.isUnmounted
+    );
+    if (found && !this.isUnmounted) {
+      this.setState({ sharePointEnabled: false });
+      if (this.state.sharePointDocLoc) {
+        await this.loadExistingFiles();
       }
     }
   }
@@ -746,16 +648,10 @@ export class Landing extends Component<LandingProps, LandingState> {
         const reader = new FileReader();
         reader.onload = () => {
           const binaryStr = reader.result as string;
-          let defaultLocation;
-          if (
-            this.state.documentLocations.length == 1 &&
-            this.state.selectedDocumentLocationName ==
-            "Documents on Default Site 1"
-          ) {
-            defaultLocation = "";
-          } else {
-            defaultLocation = this.state.selectedDocumentLocation!;
-          }
+          // An empty location id uploads to the record's default location.
+          const defaultLocation = this.filterByLocation()
+            ? this.state.selectedDocumentLocation!
+            : "";
           const uploadPromise = createSharePointDocument(
             this.props.context!,
             file.name,
@@ -809,64 +705,29 @@ export class Landing extends Component<LandingProps, LandingState> {
     try {
 
       if (!this.state.sharePointDocLoc) {
-        let noteRows: any[] = [];
-        const cols =
-          "filename,filesize,documentbody,mimetype,annotationid,createdon,subject,notetext";
-
-        if (this.state.selectedViewId) {
-          const view = this.state.noteViews.find(
-            v => v.savedqueryid === this.state.selectedViewId
-          );
-          if (view?.fetchxml) {
-            /* 1. add the regarding filter */
-            const meta = await getEntityMetadata(this.props.context!);
-            const recId = meta?.entityId?.replace(/[{}]/g, "");
-            const fetch = recId ? addRegardingFilter(view.fetchxml, recId) : view.fetchxml;
-
-            /* 2. ask for the extra columns you need                                */
-            const cols =
-              "filename,filesize,documentbody,mimetype,annotationid,createdon,subject,notetext";
-
-            const res = await this.props.context!.webAPI.retrieveMultipleRecords(
-              "annotation",
-              `?fetchXml=${encodeURIComponent(fetch)}&$select=${cols}`
-            );
-
-            noteRows = res.entities;
-          }
-        } else {
-          /* fallback to current-record-only logic */
-          const res = await getRelatedNotes(this.props.context!);
-          if (res.success) noteRows = res.data;
-        }
-
-        const filesData: FileData[] = noteRows.map(r => ({
-          filename: r.filename,
-          filesize: r.filesize,
-          documentbody: r.documentbody,
-          mimetype: r.mimetype,
-          noteId: r.annotationid,
-          createdon: new Date(r.createdon),
-          subject: r.subject,
-          notetext: r.notetext,
-        }));
-        this.setState({ files: filesData });
+        const view = this.state.selectedViewId
+          ? this.state.noteViews.find((v) => v.savedqueryid === this.state.selectedViewId)
+          : undefined;
+        // With a view selected but not found, no notes are shown (as before).
+        const files =
+          this.state.selectedViewId && !view
+            ? []
+            : await loadNotes(this.props.context!, view);
+        this.setState({ files });
       }
 
       else {
-        await this.getSharePointLocations();
+        await this.loadSharePointLocations();
         await this.getSharePointData();
       }
     } catch (err) {
       console.error("Error loading files:", err);
     } finally {
-      await this.delay(3000);
+      await delay(3000);
       this.setState({ isLoading: false });
     }
   };
 
-
-  delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   addFileAttachmentToActivity = async (file: FileData | SharePointDocument) => {
     //console.log(file);
@@ -1018,7 +879,6 @@ export class Landing extends Component<LandingProps, LandingState> {
         toast.error(getLocalString(this.props.context!, LocalStrings.Toast.Message_Delete_Error_File_Not_Found_SharePoint));
         return;
       }
-      let defaultLocation = this.isDefaultLocation();
       toast.promise(
         deleteSharePointDocument(
           this.props.context!,
@@ -1026,7 +886,7 @@ export class Landing extends Component<LandingProps, LandingState> {
           file.documentid,
           file.filetype,
           this.state.selectedDocumentLocation!,
-          defaultLocation
+          this.filterByLocation()
         ),
         {
           loading: getLocalString(this.props.context!, LocalStrings.Toast.Message_Delete_Loading),
@@ -1088,13 +948,12 @@ export class Landing extends Component<LandingProps, LandingState> {
       toast.error(getLocalString(this.props.context!, LocalStrings.Toast.Message_Create_Folder_Invalid_Name_Error));
       return;
     }
-    let defaultLocation = this.isDefaultLocation();
     const folderCreationPromise = createSharePointFolder(
       context!,
       newFolderName,
       currentFolderPath,
       this.state.selectedDocumentLocation!,
-      defaultLocation
+      this.filterByLocation()
     );
 
     toast.promise(folderCreationPromise, {
@@ -1209,19 +1068,17 @@ export class Landing extends Component<LandingProps, LandingState> {
   toggleTooltip() {
     this.setState((prevState) => ({ showTooltip: !prevState.showTooltip }));
   }
-  async saveUserSettings(
-    sharePointEnabled: boolean,
+  private saveUserSettings(
+    notesOrSharePoint: boolean,
     selectedDocumentLocation: string | null,
     selectedDocumentLocationName: string
   ) {
-    const metadata = await getEntityMetadata(this.props.context!);
-    const settings = {
-      tableName: metadata?.schemaName,
-      NotesOrSharePoint: sharePointEnabled,
-      selectedDocumentLocation: selectedDocumentLocation,
-      selectedDocumentLocationName: selectedDocumentLocationName,
-    };
-    localStorage.setItem("userSettings", JSON.stringify(settings));
+    return saveUserSettings(
+      this.props.context!,
+      notesOrSharePoint,
+      selectedDocumentLocation,
+      selectedDocumentLocationName
+    );
   }
   toggleSharePointDocLoc = async (
     _: React.MouseEvent<HTMLElement>,
