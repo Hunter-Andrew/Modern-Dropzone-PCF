@@ -1,6 +1,6 @@
 {
   "name": "dropzone-pcf",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Dropzone PCF control for a record's SharePoint documents",
   "scripts": {
     "build": "pcf-scripts build",
