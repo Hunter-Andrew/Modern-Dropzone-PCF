@@ -88,12 +88,19 @@ npm run build         # build the control into out/controls (also runs ESLint)
 npm run start:watch   # open the PCF test harness with live reload
 ```
 
-To produce an importable solution zip (managed, per `ModernDropzone.cdsproj`):
+To produce importable solution zips (unmanaged and managed):
 
 ```bash
 cd Solution/ModernDropzone
-dotnet build -c Release   # output: bin/Release/ModernDropzone.zip
+dotnet build -c Release -p:SolutionPackageType=Both
+# output: bin/Release/ModernDropzone.zip (unmanaged) and ModernDropzone_managed.zip
 ```
+
+### CI
+
+The [Build solution](.github/workflows/build-solution.yml) workflow runs on every push to `main` and on pull requests. It builds both zips and attaches them to the run as the `ModernDropzone-solution` artifact (Actions tab → the run → Artifacts).
+
+To publish a release, bump the version (see below), then push a tag starting with `v`, for example `v2.9.6`. The workflow creates a GitHub release with the zips attached.
 
 ### Versioning
 
