@@ -134,39 +134,6 @@ export function getControlValue(
 ) {
   return context.parameters[parameter]?.raw || "";
 }
-const delay = (ms: number): Promise<void> => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
-
-export async function focusSPDocumentsAndRestore() {
-  const originalTab = getFocusedTab();
-  const navItem = Xrm.Page.ui.navigation.items.get("navSPDocuments");
-  
-  if (navItem) {
-    navItem.setFocus();
-    await delay(1000);
-    setTimeout(function () {
-      if (originalTab) {
-        originalTab.setFocus();
-        window.location.reload();
-      }
-    }, 1000);
-  } else {
-    console.error("SP Documents navigation item not found.");
-  }
-}
-
-function getFocusedTab() {
-  const tabs = Xrm.Page.ui.tabs;
-
-  if (tabs.getLength() > 0) {
-    const firstTab = tabs.get(0);
-    return firstTab;
-  } else {
-    return null;
-  }
-}
-
   type Values<T> = T extends string ? T : { [K in keyof T]: Values<T[K]> }[keyof T];
   type LocalizationKey = Values<typeof LocalStrings>;
 

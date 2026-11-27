@@ -28,7 +28,6 @@ import {
   isImage,
   createDataUri,
   isActivityType,
-  focusSPDocumentsAndRestore,
   getLocalString,
   b64toBlob,
   escapeXml,
@@ -133,7 +132,6 @@ interface LandingState {
   isActivity: boolean;
   sharePointEnabledParameter: boolean;
   selectedFolderForDelete: SharePointDocument | null;
-  formType: number;
 }
 
 type FileAction =
@@ -251,7 +249,6 @@ export class Landing extends Component<LandingProps, LandingState> {
       isActivity: false,
       sharePointEnabledParameter: false,
       selectedFolderForDelete: null,
-      formType: 0,
     };
     this.removeFile = this.removeFile.bind(this);
     this.downloadFile = this.downloadFile.bind(this);
@@ -623,41 +620,6 @@ export class Landing extends Component<LandingProps, LandingState> {
     }
 
 
-    var formType = Xrm.Page.ui.getFormType();
-    this.setState({ formType });
-
-    // Onsave handler, works well with Active and Deactive ribbon buttons
-    Xrm.Page.data.entity.addOnSave(() => {
-      const interval = 500;
-      const duration = 5000;
-      const endTime = Date.now() + duration;
-
-      const intervalId = setInterval(() => {
-        const formType = Xrm.Page.ui.getFormType();
-        this.setState({ formType });
-
-        if (Date.now() >= endTime) {
-          clearInterval(intervalId);
-        }
-      }, interval);
-    });
-
-    window.addEventListener("recordSavedEvent", async (event: any) => {
-      //console.log("save event");
-      const passedEntityId = event.detail.entityId;
-      const checkEntityId = async (): Promise<void> => {
-        const entityId = (this.props.context as any).page.entityId;
-        if (entityId && entityId === passedEntityId) {
-          if (this.state.sharePointEnabledParameter == true) {
-            focusSPDocumentsAndRestore();
-          }
-        } else {
-          await this.delay(2000);
-          return checkEntityId();
-        }
-      };
-      await checkEntityId();
-    });
     const sharePointEnabled = await this.checkSharePointIntegration();
     const userPreference = await this.checkUserSettings();
     const settings = await this.getUserSettings();
@@ -715,6 +677,13 @@ export class Landing extends Component<LandingProps, LandingState> {
     const prevId = (prevProps.context as any).page.entityId;
     const currId = (this.props.context as any).page.entityId;
 
+    if (!prevId && currId && this.state.sharePointEnabledParameter) {
+      // The record was just saved for the first time. Dynamics creates its
+      // SharePoint folder asynchronously (e.g. when a Documents grid on the
+      // form loads), so look for the new document location for a short while.
+      this.waitForSharePointLocation();
+    }
+
     if (prevId !== currId) {
       this.setState({
         files: [],
@@ -730,7 +699,35 @@ export class Landing extends Component<LandingProps, LandingState> {
   }
 
   componentWillUnmount() {
+    this.isUnmounted = true;
     window.removeEventListener("resize", this.handleResize);
+  }
+
+  private isUnmounted = false;
+
+  /** True when files can be added or changed: the record is saved and the control is enabled. */
+  private isEditable(): boolean {
+    const entityId = (this.props.context as any)?.page?.entityId;
+    return !!entityId && !this.props.isDisabled;
+  }
+
+  private async waitForSharePointLocation(attempts = 8, intervalMs = 3000): Promise<void> {
+    for (let i = 0; i < attempts; i++) {
+      await this.delay(intervalMs);
+      if (this.isUnmounted) return;
+      try {
+        const locations = await getSharePointLocations(this.props.context!);
+        if (locations.length > 0) {
+          this.setState({ sharePointEnabled: false });
+          if (this.state.sharePointDocLoc) {
+            await this.loadExistingFiles();
+          }
+          return;
+        }
+      } catch (err) {
+        console.warn("Checking for SharePoint document location failed:", err);
+      }
+    }
   }
 
   handleResize() {
@@ -762,7 +759,7 @@ export class Landing extends Component<LandingProps, LandingState> {
 
   handleDrop = async (acceptedFiles: File[]) => {
     const { context, isDisabled } = this.props;
-    if (this.state.formType !== 2) {
+    if (!this.isEditable()) {
       return;
     }
     const allowNoteDropsParameter =
@@ -1476,9 +1473,9 @@ export class Landing extends Component<LandingProps, LandingState> {
   }
 
   renderRibbon = () => {
-    const { selectedFiles, sharePointDocLoc, isCollapsed, formType } =
+    const { selectedFiles, sharePointDocLoc, isCollapsed } =
       this.state;
-    const formIsDisabled = this.props.isDisabled || formType !== 2;
+    const formIsDisabled = !this.isEditable();
     const commandButtons = (
       <Stack horizontal tokens={ribbonStackTokens}>
         {!sharePointDocLoc && selectedFiles.length < 2 && (
@@ -1710,11 +1707,10 @@ export class Landing extends Component<LandingProps, LandingState> {
       currentFolderPath,
       isFolderDeletionDialogVisible,
       selectedFolderForDelete,
-      formType,
     } = this.state;
     const files = this.getFilteredAndSortedFiles();
     const sharePointData = this.getFilteredAndSortedSPFiles();
-    const formIsDisabled = formType !== 2;
+    const formIsDisabled = !this.isEditable();
     if (sharePointDocLoc) {
       return (
         <div style={{ display: "flex", alignItems: "center" }}>
@@ -1899,12 +1895,11 @@ export class Landing extends Component<LandingProps, LandingState> {
       createLocationFolderName,
       isSaveButtonEnabled,
       sharePointEnabledParameter,
-      formType,
       noteViews,
       selectedViewId
     } = this.state;
 
-    const formIsDisabled = formType !== 2;
+    const formIsDisabled = !this.isEditable();
 
     const dropdownOptions: IDropdownOption[] = documentLocations.map(
       (location) => ({
