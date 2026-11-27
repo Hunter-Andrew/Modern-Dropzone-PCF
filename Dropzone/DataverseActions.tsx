@@ -1,6 +1,6 @@
 import { IInputs } from "./generated/ManifestTypes";
 import {GenericActionResponse, NoteView} from "./Interfaces"
-import { getEntityMetadata, isActivityType } from "./utils";
+import { escapeXml, getEntityMetadata, isActivityType } from "./utils";
 
 export async function createRelatedNote(
   context: ComponentFramework.Context<IInputs>,
@@ -143,7 +143,7 @@ export async function getSharePointLocations(context: ComponentFramework.Context
     </filter>
     <filter type="and">
       <filter type="and">
-        <condition attribute="regardingobjectid" operator="eq" value="${metadata.entityId}" />
+        <condition attribute="regardingobjectid" operator="eq" value="${escapeXml(metadata.entityId)}" />
       </filter>
       <filter type="and">
         <condition attribute="servicetype" operator="in">
@@ -196,16 +196,16 @@ export async function getSharePointData(
   if (folderPath) {
     folderFilter = `
       <filter type="and">
-        <condition attribute="relativelocation" operator="eq" value="${folderPath}"/>
+        <condition attribute="relativelocation" operator="eq" value="${escapeXml(folderPath)}"/>
       </filter>`;
   }
   filters = `
       <filter type="and">
          <filter type="and">
-            <condition attribute="locationid" operator="eq" value="${selectedDocumentLocation}" />
+            <condition attribute="locationid" operator="eq" value="${escapeXml(selectedDocumentLocation)}" />
          </filter>
          <filter type="and">
-            <condition attribute="locationname" operator="eq" value="${selectedDocumentLocationName}" />
+            <condition attribute="locationname" operator="eq" value="${escapeXml(selectedDocumentLocationName)}" />
          </filter>
          <filter type="and">
             <condition attribute="servicetype" operator="eq" value="0" />
@@ -242,7 +242,7 @@ export async function getSharePointData(
         </filter>
         <link-entity name="${metadata.schemaName}" from="${isActivity?"activity":metadata.schemaName}id" to="regardingobjectid" alias="bb">
           <filter type="and">
-            <condition attribute="${isActivity?"activity":metadata.schemaName}id" operator="eq" uitype="${isActivity?"activity":metadata.schemaName}" value="${metadata.entityId}"/>
+            <condition attribute="${isActivity?"activity":metadata.schemaName}id" operator="eq" uitype="${isActivity?"activity":metadata.schemaName}" value="${escapeXml(metadata.entityId)}"/>
           </filter>
         </link-entity>
       </entity>
@@ -309,7 +309,7 @@ export async function getSharePointFolderData(context: ComponentFramework.Contex
   if (folderPath) {
     folderFilter = `
       <filter type="and">
-        <condition attribute="relativelocation" operator="eq" value="${folderPath}"/>
+        <condition attribute="relativelocation" operator="eq" value="${escapeXml(folderPath)}"/>
       </filter>`;
   }
   if(selectedDocumentLocation){
@@ -317,10 +317,10 @@ export async function getSharePointFolderData(context: ComponentFramework.Contex
   filters = `
       <filter type="and">
          <filter type="and">
-            <condition attribute="locationid" operator="eq" value="${selectedDocumentLocation}" />
+            <condition attribute="locationid" operator="eq" value="${escapeXml(selectedDocumentLocation)}" />
          </filter>
          <filter type="and">
-            <condition attribute="locationname" operator="eq" value="${selectedDocumentLocationName}" />
+            <condition attribute="locationname" operator="eq" value="${escapeXml(selectedDocumentLocationName)}" />
          </filter>
          <filter type="and">
             <condition attribute="servicetype" operator="eq" value="0" />
@@ -361,7 +361,7 @@ ${filters}
         <order attribute="relativelocation" descending="false"/>
         <link-entity name="${metadata.schemaName}" from="${isActivity?"activity":metadata.schemaName}id" to="regardingobjectid" alias="bb">
           <filter type="and">
-            <condition attribute="${isActivity?"activity":metadata.schemaName}id" operator="eq" uitype="${isActivity?"activity":metadata.schemaName}" value="${metadata.entityId}"/>
+            <condition attribute="${isActivity?"activity":metadata.schemaName}id" operator="eq" uitype="${isActivity?"activity":metadata.schemaName}" value="${escapeXml(metadata.entityId)}"/>
           </filter>
         </link-entity>
       </entity>

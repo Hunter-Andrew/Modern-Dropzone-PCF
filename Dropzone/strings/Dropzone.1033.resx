@@ -273,8 +273,8 @@
 	<data name="Toast__Message_Create_Folder_Error" xml:space="preserve">
 		<value>Failed to create folder</value>
 	</data>
-	<data name="Toast__Message_Create_Folder_Empty_Error" xml:space="preserve">
-		<value>Folder name cannot be empty</value>
+	<data name="Toast__Message_Create_Folder_Invalid_Name_Error" xml:space="preserve">
+		<value>Folder names can't contain " * : &lt; &gt; ? / \ | or start or end with a space or period</value>
 	</data>
 
 </root>
