@@ -1,6 +1,6 @@
 import { IInputs } from "./generated/ManifestTypes";
 import { GenericActionResponse, NoteView, NoteViewResult } from "./Interfaces";
-import { escapeXml, getEntityMetadata, isActivityType } from "./utils";
+import { errorMessage, escapeXml, getEntityMetadata, isActivityType } from "./utils";
 
 export async function createRelatedNote(
   context: ComponentFramework.Context<IInputs>,
@@ -30,7 +30,7 @@ export async function createRelatedNote(
     return { success: true, message: "Note created successfully", noteId: result.id };
   } catch (error) {
     console.error("Error creating note:", error);
-    return { success: false, message: `Error creating note: ${(error as any).message}` };
+    return { success: false, message: `Error creating note: ${errorMessage(error)}` };
   }
 }
 
@@ -49,7 +49,7 @@ export async function getRelatedNotes(
     return { success: true, data: filteredEntities };
   } catch (error) {
     console.error("Error fetching notes:", error);
-    return { success: false, message: `Error fetching notes: ${(error as any).message}`, data: [] };
+    return { success: false, message: `Error fetching notes: ${errorMessage(error)}`, data: [] };
   }
 }
 
@@ -62,7 +62,7 @@ export async function deleteRelatedNote(
     return { success: true, message: "Note deleted successfully" };
   } catch (error) {
     console.error("Error deleting note:", error);
-    return { success: false, message: `Error deleting note: ${(error as any).message}` };
+    return { success: false, message: `Error deleting note: ${errorMessage(error)}` };
   }
 }
 
@@ -111,11 +111,11 @@ export async function getNoteViews(
 
     return { success: true, data: views };
 
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error fetching note views:", err);
     return {
       success: false,
-      message: `Error fetching note views: ${err.message}`,
+      message: `Error fetching note views: ${errorMessage(err)}`,
       data: []
     };
   }
@@ -680,7 +680,7 @@ export async function createActivityAttachment(
     return { success: true, message: `${fileName} added to ${metadata.schemaName} attachments successfully`};
   } catch (error) {
     console.error("Error adding SharePoint document to activity:", error);
-    return { success: false, message: `Error adding SharePoint document to activity: ${(error as any).message}` };
+    return { success: false, message: `Error adding SharePoint document to activity: ${errorMessage(error)}` };
   }
 }
 

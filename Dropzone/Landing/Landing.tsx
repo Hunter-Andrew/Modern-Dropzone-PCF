@@ -29,6 +29,7 @@ import {
   b64toBlob,
   isValidSharePointFolderName,
   getControlValue,
+  getRecordId,
   LocalizationKey,
 } from "../utils";
 import {
@@ -197,7 +198,7 @@ export class Landing extends Component<LandingProps, LandingState> {
     this.handleViewChange = this.handleViewChange.bind(this);
   }
 
-  handleRemoveFolderClick = (event: any, file: SharePointDocument): void => {
+  handleRemoveFolderClick = (event: React.MouseEvent<unknown>, file: SharePointDocument): void => {
     event.preventDefault();
     event.stopPropagation();
 
@@ -508,8 +509,8 @@ export class Landing extends Component<LandingProps, LandingState> {
   }
 
   componentDidUpdate(prevProps: LandingProps) {
-    const prevId = (prevProps.context as any).page.entityId;
-    const currId = (this.props.context as any).page.entityId;
+    const prevId = getRecordId(prevProps.context);
+    const currId = getRecordId(this.props.context);
 
     if (!prevId && currId && this.state.sharePointEnabledParameter) {
       // The record was just saved for the first time. Dynamics creates its
@@ -541,8 +542,7 @@ export class Landing extends Component<LandingProps, LandingState> {
 
   /** True when files can be added or changed: the record is saved and the control is enabled. */
   private isEditable(): boolean {
-    const entityId = (this.props.context as any)?.page?.entityId;
-    return !!entityId && !this.props.isDisabled;
+    return !!getRecordId(this.props.context) && !this.props.isDisabled;
   }
 
   private async waitForSharePointLocation(): Promise<void> {
@@ -695,8 +695,7 @@ export class Landing extends Component<LandingProps, LandingState> {
     if (!this.props.context) return;
     this.setState({ isLoading: true });
 
-    const recordId = (this.props.context as any).page.entityId;
-    if (!recordId) {
+    if (!getRecordId(this.props.context)) {
       this.setState({ isLoading: false, files: [], sharePointData: [] });
       return;
     }
@@ -1050,7 +1049,7 @@ export class Landing extends Component<LandingProps, LandingState> {
     this.setState({ isDialogOpen: false, previewFile: null });
   }
 
-  handleSearch = (event: any, newValue?: string) => {
+  handleSearch = (newValue?: string) => {
     const searchText = newValue || "";
 
     if (this.state.sharePointDocLoc) {
@@ -1246,7 +1245,7 @@ export class Landing extends Component<LandingProps, LandingState> {
     const { context, isDisabled } = this.props;
     const t = this.t;
 
-    if (!(context as any).page.entityId) {
+    if (!getRecordId(context)) {
       return (
         <div className="record-not-created-message">
           {t(LocalStrings.Input.Placeholder_Record_Not_Created)}
@@ -1260,7 +1259,7 @@ export class Landing extends Component<LandingProps, LandingState> {
     const isEmpty = sharePointDocLoc ? sharePointData.length === 0 : files.length === 0;
     const editingFile = files.find((file) => file.noteId === editingFileId);
 
-    const param = (name: string) => getControlValue(context!, name) === true;
+    const param = (name: keyof IInputs) => getControlValue(context!, name) === true;
     const sharePointEnabledParameter = this.state.sharePointEnabledParameter;
 
     const locationOptions: IDropdownOption[] = documentLocations.map((location) => ({
@@ -1339,7 +1338,7 @@ export class Landing extends Component<LandingProps, LandingState> {
             menuVisible={this.state.menuVisible}
             menuTarget={this.state.target}
             onAction={this.performActionOnSelectedFiles}
-            onSearch={(value) => this.handleSearch(null, value)}
+            onSearch={(value) => this.handleSearch(value)}
             onToggleMenu={this.toggleMenu}
             onCloseMenu={this.closeMenu}
             onCreateFolder={this.toggleModal}
