@@ -7,7 +7,7 @@ export async function createRelatedNote(
   fileName: string,
   base64: string,
   fileSize: number,
-  mimeType: string
+  mimeType: string,
 ) {
   const entity = "annotation";
   const metadata = await getEntityMetadata(context);
@@ -16,13 +16,13 @@ export async function createRelatedNote(
   }
   const objectId = `objectid_${metadata.schemaName}@odata.bind`;
   const record = {
-    "isdocument": true,
-    "filename": fileName,
-    "subject": fileName,
-    "filesize": fileSize,
-    "mimetype": mimeType,
-    "documentbody": base64.split(',')[1],
-    [objectId]: `/${metadata?.logicalCollectionName}(${metadata.entityId})`
+    isdocument: true,
+    filename: fileName,
+    subject: fileName,
+    filesize: fileSize,
+    mimetype: mimeType,
+    documentbody: base64.split(",")[1],
+    [objectId]: `/${metadata?.logicalCollectionName}(${metadata.entityId})`,
   };
 
   try {
@@ -34,9 +34,7 @@ export async function createRelatedNote(
   }
 }
 
-export async function getRelatedNotes(
-  context: ComponentFramework.Context<IInputs>
-) {
+export async function getRelatedNotes(context: ComponentFramework.Context<IInputs>) {
   const metadata = await getEntityMetadata(context);
   if (!metadata) {
     return { success: false, message: "Failed to retrieve entity metadata", data: [] };
@@ -44,8 +42,13 @@ export async function getRelatedNotes(
   const filter = `_objectid_value eq ${metadata.entityId}`;
 
   try {
-    const result = await context.webAPI.retrieveMultipleRecords('annotation', `?$filter=${filter}&$orderby=createdon desc`);
-    const filteredEntities = result.entities.filter((entity: any) => entity.objecttypecode === metadata.schemaName);
+    const result = await context.webAPI.retrieveMultipleRecords(
+      "annotation",
+      `?$filter=${filter}&$orderby=createdon desc`,
+    );
+    const filteredEntities = result.entities.filter(
+      (entity: any) => entity.objecttypecode === metadata.schemaName,
+    );
     return { success: true, data: filteredEntities };
   } catch (error) {
     console.error("Error fetching notes:", error);
@@ -55,10 +58,10 @@ export async function getRelatedNotes(
 
 export async function deleteRelatedNote(
   context: ComponentFramework.Context<IInputs>,
-  noteId: string
+  noteId: string,
 ) {
   try {
-    await context.webAPI.deleteRecord('annotation', noteId);
+    await context.webAPI.deleteRecord("annotation", noteId);
     return { success: true, message: "Note deleted successfully" };
   } catch (error) {
     console.error("Error deleting note:", error);
@@ -72,58 +75,53 @@ export async function updateRelatedNote(
   filename: string,
 ): Promise<{ success: boolean; message: string }> {
   const data = {
-    filename: filename
+    filename: filename,
   };
 
   try {
-    await context.webAPI.updateRecord('annotation', noteId, data);
+    await context.webAPI.updateRecord("annotation", noteId, data);
     return {
       success: true,
-      message: "Note updated successfully."
+      message: "Note updated successfully.",
     };
   } catch (error) {
     console.error("Failed to update note:", error);
     return {
       success: false,
-      message: `Error updating note: ${(error as Error).message}`
+      message: `Error updating note: ${(error as Error).message}`,
     };
   }
 }
 
-
 export async function getNoteViews(
-  context: ComponentFramework.Context<IInputs>
+  context: ComponentFramework.Context<IInputs>,
 ): Promise<NoteViewResult> {
   try {
     const select = "$select=savedqueryid,name,fetchxml";
     const filter = "$filter=returnedtypecode eq 'annotation' and fetchxml ne null";
 
-    const res = await context.webAPI.retrieveMultipleRecords(
-      "savedquery",
-      `?${select}&${filter}`
-    );
+    const res = await context.webAPI.retrieveMultipleRecords("savedquery", `?${select}&${filter}`);
 
     const views: NoteView[] = res.entities.map((e: any) => ({
       savedqueryid: e.savedqueryid,
-      name:         e.name,
-      fetchxml:     e.fetchxml
+      name: e.name,
+      fetchxml: e.fetchxml,
     }));
 
     return { success: true, data: views };
-
   } catch (err) {
     console.error("Error fetching note views:", err);
     return {
       success: false,
       message: `Error fetching note views: ${errorMessage(err)}`,
-      data: []
+      data: [],
     };
   }
 }
 
-
-
-export async function getSharePointLocations(context: ComponentFramework.Context<IInputs>): Promise<{ name: string, sharepointdocumentlocationid:string }[]> {
+export async function getSharePointLocations(
+  context: ComponentFramework.Context<IInputs>,
+): Promise<{ name: string; sharepointdocumentlocationid: string }[]> {
   const metadata = await getEntityMetadata(context);
   if (!metadata) {
     return [];
@@ -157,42 +155,41 @@ export async function getSharePointLocations(context: ComponentFramework.Context
   const encodedFetchXml = encodeURIComponent(fetchXml);
   const url = `${metadata.clientUrl}/api/data/v9.0/sharepointdocumentlocations?fetchXml=${encodedFetchXml}`;
 
-  
   const headers = {
-    "Accept": "application/json",
+    Accept: "application/json",
     "OData-MaxVersion": "4.0",
     "OData-Version": "4.0",
-    "Prefer": "odata.include-annotations=OData.Community.Display.V1.FormattedValue"
+    Prefer: "odata.include-annotations=OData.Community.Display.V1.FormattedValue",
   };
 
   const response = await fetch(url, {
     method: "GET",
-    headers: headers
+    headers: headers,
   });
 
   if (!response.ok) {
     throw new Error(`Error fetching SharePoint document locations: ${response.statusText}`);
   }
-let data = await response.json();
+  let data = await response.json();
   return data.value.map((item: any) => ({
     name: item.name,
     sharepointdocumentlocationid: item.sharepointdocumentlocationid,
-    parentsiteid: item._parentsiteorlocation_value
+    parentsiteid: item._parentsiteorlocation_value,
   }));
 }
 export async function getSharePointData(
   context: ComponentFramework.Context<IInputs>,
-  selectedDocumentLocation?:string,
+  selectedDocumentLocation?: string,
   folderPath?: string,
-  selectedDocumentLocationName?:string
+  selectedDocumentLocationName?: string,
 ): Promise<any[]> {
   const metadata = await getEntityMetadata(context);
   if (!metadata) {
     return [];
   }
-  const isActivity = isActivityType(metadata.schemaName)
-  let filters = '';
-  let folderFilter = '';
+  const isActivity = isActivityType(metadata.schemaName);
+  let filters = "";
+  let folderFilter = "";
   if (folderPath) {
     folderFilter = `
       <filter type="and">
@@ -211,8 +208,8 @@ export async function getSharePointData(
             <condition attribute="servicetype" operator="eq" value="0" />
          </filter>
          ${folderFilter}
-      </filter>`
-  
+      </filter>`;
+
   const fetchXml = `
     <fetch distinct="false" mapping="logical" returntotalrecordcount="true" no-lock="false">
       <entity name="sharepointdocument">
@@ -240,9 +237,9 @@ export async function getSharePointData(
         <filter>
           <condition attribute="isrecursivefetch" operator="eq" value="0"/>
         </filter>
-        <link-entity name="${metadata.schemaName}" from="${isActivity?"activity":metadata.schemaName}id" to="regardingobjectid" alias="bb">
+        <link-entity name="${metadata.schemaName}" from="${isActivity ? "activity" : metadata.schemaName}id" to="regardingobjectid" alias="bb">
           <filter type="and">
-            <condition attribute="${isActivity?"activity":metadata.schemaName}id" operator="eq" uitype="${isActivity?"activity":metadata.schemaName}" value="${escapeXml(metadata.entityId)}"/>
+            <condition attribute="${isActivity ? "activity" : metadata.schemaName}id" operator="eq" uitype="${isActivity ? "activity" : metadata.schemaName}" value="${escapeXml(metadata.entityId)}"/>
           </filter>
         </link-entity>
       </entity>
@@ -253,15 +250,15 @@ export async function getSharePointData(
   const url = `${metadata.clientUrl}/api/data/v9.0/sharepointdocuments?fetchXml=${encodedFetchXml}`;
 
   const headers = {
-    "Accept": "application/json",
+    Accept: "application/json",
     "OData-MaxVersion": "4.0",
     "OData-Version": "4.0",
-    "Prefer": "odata.include-annotations=OData.Community.Display.V1.FormattedValue"
+    Prefer: "odata.include-annotations=OData.Community.Display.V1.FormattedValue",
   };
 
   const response = await fetch(url, {
     method: "GET",
-    headers: headers
+    headers: headers,
   });
 
   if (!response.ok) {
@@ -282,7 +279,8 @@ export async function getSharePointData(
     ischeckedout: item.ischeckedout,
     ischeckedoutFormatted: item["ischeckedout@OData.Community.Display.V1.FormattedValue"],
     sharepointcreatedon: item.sharepointcreatedon,
-    sharepointcreatedonFormatted: item["sharepointcreatedon@OData.Community.Display.V1.FormattedValue"],
+    sharepointcreatedonFormatted:
+      item["sharepointcreatedon@OData.Community.Display.V1.FormattedValue"],
     locationname: item.locationname,
     iconclassname: item.iconclassname,
     absoluteurl: item.absoluteurl,
@@ -294,27 +292,33 @@ export async function getSharePointData(
     servicetypeFormatted: item["servicetype@OData.Community.Display.V1.FormattedValue"],
     servicetype: item.servicetype,
     author: item.author,
-    filesize: item.filesize
+    filesize: item.filesize,
   }));
 }
 
-export async function getSharePointFolderData(context: ComponentFramework.Context<IInputs>,folderPath?: string,selectedDocumentLocation?:string|null,selectedDocumentLocationName?:string,defaultSite?:boolean): Promise<any[]> {
+export async function getSharePointFolderData(
+  context: ComponentFramework.Context<IInputs>,
+  folderPath?: string,
+  selectedDocumentLocation?: string | null,
+  selectedDocumentLocationName?: string,
+  defaultSite?: boolean,
+): Promise<any[]> {
   const metadata = await getEntityMetadata(context);
   if (!metadata) {
     return [];
   }
   const isActivity = isActivityType(metadata.schemaName);
-  let folderFilter = '';
-  let filters = '';
+  let folderFilter = "";
+  let filters = "";
   if (folderPath) {
     folderFilter = `
       <filter type="and">
         <condition attribute="relativelocation" operator="eq" value="${escapeXml(folderPath)}"/>
       </filter>`;
   }
-  if(selectedDocumentLocation){
-    if(defaultSite){
-  filters = `
+  if (selectedDocumentLocation) {
+    if (defaultSite) {
+      filters = `
       <filter type="and">
          <filter type="and">
             <condition attribute="locationid" operator="eq" value="${escapeXml(selectedDocumentLocation)}" />
@@ -326,10 +330,9 @@ export async function getSharePointFolderData(context: ComponentFramework.Contex
             <condition attribute="servicetype" operator="eq" value="0" />
          </filter>
          ${folderFilter}
-      </filter>`
-    }
-    else{
-     filters = `${folderFilter}`
+      </filter>`;
+    } else {
+      filters = `${folderFilter}`;
     }
   }
   const fetchXml = `
@@ -359,9 +362,9 @@ export async function getSharePointFolderData(context: ComponentFramework.Contex
         </filter>
 ${filters}
         <order attribute="relativelocation" descending="false"/>
-        <link-entity name="${metadata.schemaName}" from="${isActivity?"activity":metadata.schemaName}id" to="regardingobjectid" alias="bb">
+        <link-entity name="${metadata.schemaName}" from="${isActivity ? "activity" : metadata.schemaName}id" to="regardingobjectid" alias="bb">
           <filter type="and">
-            <condition attribute="${isActivity?"activity":metadata.schemaName}id" operator="eq" uitype="${isActivity?"activity":metadata.schemaName}" value="${escapeXml(metadata.entityId)}"/>
+            <condition attribute="${isActivity ? "activity" : metadata.schemaName}id" operator="eq" uitype="${isActivity ? "activity" : metadata.schemaName}" value="${escapeXml(metadata.entityId)}"/>
           </filter>
         </link-entity>
       </entity>
@@ -372,15 +375,15 @@ ${filters}
   const url = `${metadata.clientUrl}/api/data/v9.0/sharepointdocuments?fetchXml=${encodedFetchXml}`;
 
   const headers = {
-    "Accept": "application/json",
+    Accept: "application/json",
     "OData-MaxVersion": "4.0",
     "OData-Version": "4.0",
-    "Prefer": "odata.include-annotations=OData.Community.Display.V1.FormattedValue"
+    Prefer: "odata.include-annotations=OData.Community.Display.V1.FormattedValue",
   };
 
   const response = await fetch(url, {
     method: "GET",
-    headers: headers
+    headers: headers,
   });
 
   if (!response.ok) {
@@ -401,7 +404,8 @@ ${filters}
     ischeckedout: item.ischeckedout,
     ischeckedoutFormatted: item["ischeckedout@OData.Community.Display.V1.FormattedValue"],
     sharepointcreatedon: item.sharepointcreatedon,
-    sharepointcreatedonFormatted: item["sharepointcreatedon@OData.Community.Display.V1.FormattedValue"],
+    sharepointcreatedonFormatted:
+      item["sharepointcreatedon@OData.Community.Display.V1.FormattedValue"],
     locationname: item.locationname,
     iconclassname: item.iconclassname,
     absoluteurl: item.absoluteurl,
@@ -413,45 +417,45 @@ ${filters}
     servicetypeFormatted: item["servicetype@OData.Community.Display.V1.FormattedValue"],
     servicetype: item.servicetype,
     author: item.author,
-    filesize: item.filesize
+    filesize: item.filesize,
   }));
 }
 
 async function getSiteUrl(
   context: ComponentFramework.Context<IInputs>,
-  parentLocationId: string
+  parentLocationId: string,
 ): Promise<string> {
   const metadata = await getEntityMetadata(context);
   const url = `${metadata?.clientUrl}/api/data/v9.0/FetchSiteUrl`;
   const body = JSON.stringify({
-    "DocumentId": parentLocationId,
-    "ParentEntityReference": {
-        "@odata.type": `Microsoft.Dynamics.CRM.${metadata?.schemaName}`,
-        [`${metadata?.schemaName}id`]: `${metadata?.entityId}`
-    }
-});
+    DocumentId: parentLocationId,
+    ParentEntityReference: {
+      "@odata.type": `Microsoft.Dynamics.CRM.${metadata?.schemaName}`,
+      [`${metadata?.schemaName}id`]: `${metadata?.entityId}`,
+    },
+  });
 
-const fetchOptions = {
-  method: 'POST',
-  headers: {
-      'Content-Type': 'application/json'
-  },
-  body: body
-};
-try {
-  const response = await fetch(url, fetchOptions);
-  if (!response.ok) {
-    throw new Error('Error getting SharePoint site: ' + response.statusText);
+  const fetchOptions = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: body,
+  };
+  try {
+    const response = await fetch(url, fetchOptions);
+    if (!response.ok) {
+      throw new Error("Error getting SharePoint site: " + response.statusText);
+    }
+    const responseData = await response.json();
+    if (!responseData.SiteAndLocationUrl) {
+      throw new Error("SiteAndLocationUrl not found in response");
+    }
+    return responseData.SiteAndLocationUrl;
+  } catch (error) {
+    console.error("Error getting SharePoint site: ", error);
+    throw error;
   }
-  const responseData = await response.json();
-  if (!responseData.SiteAndLocationUrl) {
-    throw new Error('SiteAndLocationUrl not found in response');
-  }
-  return responseData.SiteAndLocationUrl;
-} catch (error) {
-  console.error('Error getting SharePoint site: ', error);
-  throw error;
-}
 }
 
 export async function createSharePointLocation(
@@ -464,43 +468,43 @@ export async function createSharePointLocation(
   const url = `${metadata?.clientUrl}/api/data/v9.0/AddOrEditLocation`;
   const absUrl = await getSiteUrl(context, parentLocationId);
   const body = JSON.stringify({
-    "AbsUrl": absUrl + "/" + locationName,
-    "DocumentId": "",
-    "IsAddOrEditMode": true,
-    "IsCreateFolder": true,
-    "LocationName": locationName,
-    "ParentEntityReference": {
+    AbsUrl: absUrl + "/" + locationName,
+    DocumentId: "",
+    IsAddOrEditMode: true,
+    IsCreateFolder: true,
+    LocationName: locationName,
+    ParentEntityReference: {
       "@odata.type": `Microsoft.Dynamics.CRM.${metadata?.schemaName}`,
       [`${metadata?.schemaName}id`]: metadata?.entityId,
     },
-    "ParentId": parentLocationId,
-    "ParentType": "sharepointdocumentlocation",
-    "RelativePath": locationName
+    ParentId: parentLocationId,
+    ParentType: "sharepointdocumentlocation",
+    RelativePath: locationName,
   });
 
   const fetchOptions = {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'OData-Version': '4.0',
-      'OData-MaxVersion': '4.0',
-      'Accept': 'application/json',
+      "Content-Type": "application/json",
+      "OData-Version": "4.0",
+      "OData-MaxVersion": "4.0",
+      Accept: "application/json",
     },
-    body: body
+    body: body,
   };
 
   try {
     const response = await fetch(url, fetchOptions);
     if (!response.ok) {
-      throw new Error('Failed to create a location: ' + response.statusText);
+      throw new Error("Failed to create a location: " + response.statusText);
     }
     const responseData = await response.json();
     if (!responseData.LocationId) {
-      throw new Error('LocationId not found in response');
+      throw new Error("LocationId not found in response");
     }
     return responseData.LocationId;
   } catch (error) {
-    console.error('Error creating a location:', error);
+    console.error("Error creating a location:", error);
     throw error;
   }
 }
@@ -510,46 +514,46 @@ export async function createSharePointDocument(
   fileName: string,
   dataURL: string,
   folderPath: string,
-  locationId: string
+  locationId: string,
 ): Promise<void> {
   const metadata = await getEntityMetadata(context);
-  if(!metadata){
-    return
+  if (!metadata) {
+    return;
   }
   const isActivity = isActivityType(metadata.schemaName);
   const url = `${metadata?.clientUrl}/api/data/v9.0/UploadDocument`;
-  const base64 = dataURL.split(',')[1];
+  const base64 = dataURL.split(",")[1];
   const body = JSON.stringify({
-      "Content": base64,
-      "Entity": {
-          "@odata.type": "Microsoft.Dynamics.CRM.sharepointdocument",
-          "locationid": locationId,
-          "title": `${fileName}`
-      },
-      "OverwriteExisting": true,
-      "ParentEntityReference": {
-          "@odata.type": `Microsoft.Dynamics.CRM.${metadata.schemaName}`,
-          [`${isActivity?"activity":metadata.schemaName}id`]: `${metadata?.entityId}`
-      },
-      "FolderPath": `${folderPath}`
+    Content: base64,
+    Entity: {
+      "@odata.type": "Microsoft.Dynamics.CRM.sharepointdocument",
+      locationid: locationId,
+      title: `${fileName}`,
+    },
+    OverwriteExisting: true,
+    ParentEntityReference: {
+      "@odata.type": `Microsoft.Dynamics.CRM.${metadata.schemaName}`,
+      [`${isActivity ? "activity" : metadata.schemaName}id`]: `${metadata?.entityId}`,
+    },
+    FolderPath: `${folderPath}`,
   });
 
   const fetchOptions = {
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/json'
-      },
-      body: body
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: body,
   };
 
   try {
-      const response = await fetch(url, fetchOptions);
-      if (!response.ok) {
-          throw new Error('Failed to upload document: ' + response.statusText);
-      }
+    const response = await fetch(url, fetchOptions);
+    if (!response.ok) {
+      throw new Error("Failed to upload document: " + response.statusText);
+    }
   } catch (error) {
-      console.error('Error uploading document:', error);
-      throw error;
+    console.error("Error uploading document:", error);
+    throw error;
   }
 }
 
@@ -559,49 +563,49 @@ export async function deleteSharePointDocument(
   documentId: number,
   fileType: string,
   rawlocationId: string,
-  isDefaultLocation: boolean
+  isDefaultLocation: boolean,
 ): Promise<void> {
   const metadata = await getEntityMetadata(context);
   if (!metadata) {
     return;
   }
   let locationId = rawlocationId;
-  if(!isDefaultLocation){
+  if (!isDefaultLocation) {
     locationId = "00000000-0000-0000-0000-000000000000";
   }
   const isActivity = isActivityType(metadata.schemaName);
   const url = `${metadata?.clientUrl}/api/data/v9.0/DeleteDocument`;
   const body = JSON.stringify({
-    "Entities": [
+    Entities: [
       {
         "@odata.type": "Microsoft.Dynamics.CRM.sharepointdocument",
-        "sharepointdocumentid": `{${sharepointDocumentId.toUpperCase()}}`,
-        "documentid": documentId,
-        "filetype": fileType,
-        "locationid": locationId
-      }
+        sharepointdocumentid: `{${sharepointDocumentId.toUpperCase()}}`,
+        documentid: documentId,
+        filetype: fileType,
+        locationid: locationId,
+      },
     ],
-    "ParentEntityReference": {
+    ParentEntityReference: {
       "@odata.type": `Microsoft.Dynamics.CRM.${metadata?.schemaName}`,
-      [`${isActivity?"activity":metadata.schemaName}id`]: `${metadata?.entityId}`
-    }
+      [`${isActivity ? "activity" : metadata.schemaName}id`]: `${metadata?.entityId}`,
+    },
   });
 
   const fetchOptions = {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     },
-    body: body
+    body: body,
   };
 
   try {
     const response = await fetch(url, fetchOptions);
     if (!response.ok) {
-      throw new Error('Failed to delete document: ' + response.statusText);
+      throw new Error("Failed to delete document: " + response.statusText);
     }
   } catch (error) {
-    console.error('Error deleting document:', error);
+    console.error("Error deleting document:", error);
     throw error;
   }
 }
@@ -611,47 +615,47 @@ export async function createSharePointFolder(
   folderName: string,
   folderPath: string,
   rawlocationId: string,
-  isDefaultLocation: boolean
+  isDefaultLocation: boolean,
 ): Promise<void> {
   const metadata = await getEntityMetadata(context);
-  if(!metadata){
-    return
+  if (!metadata) {
+    return;
   }
 
   let locationId = rawlocationId;
-  if(!isDefaultLocation){
+  if (!isDefaultLocation) {
     locationId = "00000000-0000-0000-0000-000000000000";
   }
-  
+
   const isActivity = isActivityType(metadata.schemaName);
   const url = `${metadata?.clientUrl}/api/data/v9.0/NewDocument`;
   const body = JSON.stringify({
-      "FileName": folderName,
-      "LocationId": locationId,
-      "IsFolder": true,
-      "FolderPath": folderPath,
-      "ParentEntityReference": {
-          "@odata.type": `Microsoft.Dynamics.CRM.${metadata?.schemaName}`,
-          [`${isActivity?"activity":metadata.schemaName}id`]: `${metadata?.entityId}`
-      }
+    FileName: folderName,
+    LocationId: locationId,
+    IsFolder: true,
+    FolderPath: folderPath,
+    ParentEntityReference: {
+      "@odata.type": `Microsoft.Dynamics.CRM.${metadata?.schemaName}`,
+      [`${isActivity ? "activity" : metadata.schemaName}id`]: `${metadata?.entityId}`,
+    },
   });
 
   const fetchOptions = {
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/json'
-      },
-      body: body
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: body,
   };
 
   try {
-      const response = await fetch(url, fetchOptions);
-      if (!response.ok) {
-          throw new Error('Failed to create a folder: ' + response.statusText);
-      }
+    const response = await fetch(url, fetchOptions);
+    if (!response.ok) {
+      throw new Error("Failed to create a folder: " + response.statusText);
+    }
   } catch (error) {
-      console.error('Error creating a folder:', error);
-      throw error;
+    console.error("Error creating a folder:", error);
+    throw error;
   }
 }
 
@@ -659,28 +663,36 @@ export async function createActivityAttachment(
   context: ComponentFramework.Context<IInputs>,
   fileName: string,
   base64: string,
-  mimeType: string
+  mimeType: string,
 ): Promise<GenericActionResponse> {
   const metadata = await getEntityMetadata(context);
-  if(!metadata){
-    return { success: false, message: `Unable to find entity metadata to create an activity document` };
+  if (!metadata) {
+    return {
+      success: false,
+      message: `Unable to find entity metadata to create an activity document`,
+    };
   }
   const entity = "activitymimeattachment";
   const objectId = `objectid_${metadata.schemaName}@odata.bind`;
   const record = {
-    "filename": fileName,
-    "mimetype": mimeType,
-    "body": base64.split(',')[1],
+    filename: fileName,
+    mimetype: mimeType,
+    body: base64.split(",")[1],
     [objectId]: `/${metadata?.logicalCollectionName}(${metadata.entityId})`,
-    "objecttypecode": metadata.schemaName
+    objecttypecode: metadata.schemaName,
   };
 
   try {
     await context.webAPI.createRecord(entity, record);
-    return { success: true, message: `${fileName} added to ${metadata.schemaName} attachments successfully`};
+    return {
+      success: true,
+      message: `${fileName} added to ${metadata.schemaName} attachments successfully`,
+    };
   } catch (error) {
     console.error("Error adding SharePoint document to activity:", error);
-    return { success: false, message: `Error adding SharePoint document to activity: ${errorMessage(error)}` };
+    return {
+      success: false,
+      message: `Error adding SharePoint document to activity: ${errorMessage(error)}`,
+    };
   }
 }
-

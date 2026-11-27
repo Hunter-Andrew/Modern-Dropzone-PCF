@@ -192,8 +192,7 @@ export class Landing extends Component<LandingProps, LandingState> {
     this.onCalloutDismiss = this.onCalloutDismiss.bind(this);
     this.toggleRememberLocation = this.toggleRememberLocation.bind(this);
     this.handleRemoveFolderClick = this.handleRemoveFolderClick.bind(this);
-    this.addFileAttachmentToActivity =
-      this.addFileAttachmentToActivity.bind(this);
+    this.addFileAttachmentToActivity = this.addFileAttachmentToActivity.bind(this);
     this.targetRef = React.createRef();
     this.handleViewChange = this.handleViewChange.bind(this);
   }
@@ -214,18 +213,15 @@ export class Landing extends Component<LandingProps, LandingState> {
   };
 
   private handlecreateLocation = async () => {
-    const {
-      createLocationDisplayName,
-      createLocationFolderName,
-      selectedCreateLocation,
-    } = this.state;
+    const { createLocationDisplayName, createLocationFolderName, selectedCreateLocation } =
+      this.state;
     const { context } = this.props;
 
     const createLocationPromise = createSharePointLocation(
       context!,
       createLocationDisplayName,
       createLocationFolderName,
-      selectedCreateLocation
+      selectedCreateLocation,
     );
 
     toast.promise(createLocationPromise, {
@@ -236,10 +232,7 @@ export class Landing extends Component<LandingProps, LandingState> {
           key: res,
           text: createLocationDisplayName,
         };
-        this.handleDropdownChange(
-          {} as React.FormEvent<HTMLDivElement>,
-          createdSPLocation
-        );
+        this.handleDropdownChange({} as React.FormEvent<HTMLDivElement>, createdSPLocation);
 
         this.setState((prevState) => ({
           documentLocations: [
@@ -260,26 +253,23 @@ export class Landing extends Component<LandingProps, LandingState> {
 
   private handleInputChange = (
     event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>,
-    newValue?: string
+    newValue?: string,
   ) => {
     const target = event.currentTarget;
     const name = target.name as keyof LandingState;
     const value = newValue ?? target.value;
     this.setState(
       (prevState) =>
-      ({
-        ...prevState,
-        [name]: value,
-      } as unknown as LandingState),
-      this.validateForm
+        ({
+          ...prevState,
+          [name]: value,
+        }) as unknown as LandingState,
+      this.validateForm,
     );
   };
   private validateForm = (): void => {
-    const {
-      createLocationDisplayName,
-      selectedCreateLocation,
-      createLocationFolderName,
-    } = this.state;
+    const { createLocationDisplayName, selectedCreateLocation, createLocationFolderName } =
+      this.state;
     const isSaveButtonEnabled =
       createLocationDisplayName.trim() !== "" &&
       selectedCreateLocation.trim() !== "" &&
@@ -288,13 +278,10 @@ export class Landing extends Component<LandingProps, LandingState> {
   };
   private handleCreateLocationDropdownChange = (
     event: React.FormEvent<IComboBox>,
-    option?: IComboBoxOption
+    option?: IComboBoxOption,
   ): void => {
     if (option) {
-      this.setState(
-        { selectedCreateLocation: option.key as string },
-        this.validateForm
-      );
+      this.setState({ selectedCreateLocation: option.key as string }, this.validateForm);
     }
   };
 
@@ -307,10 +294,8 @@ export class Landing extends Component<LandingProps, LandingState> {
   };
   private targetElement: HTMLElement | null = null;
   private onGearIconClick = (
-    ev?:
-      | React.MouseEvent<HTMLElement, MouseEvent>
-      | React.KeyboardEvent<HTMLElement>,
-    item?: IContextualMenuItem
+    ev?: React.MouseEvent<HTMLElement, MouseEvent> | React.KeyboardEvent<HTMLElement>,
+    item?: IContextualMenuItem,
   ): boolean | void => {
     if (ev && ev.currentTarget instanceof HTMLElement) {
       this.targetElement = ev.currentTarget;
@@ -339,7 +324,7 @@ export class Landing extends Component<LandingProps, LandingState> {
             this.props.context!,
             folderPath,
             this.state.selectedDocumentLocation,
-            this.state.selectedDocumentLocationName
+            this.state.selectedDocumentLocationName,
           );
           this.setState({
             sharePointData: data,
@@ -350,7 +335,7 @@ export class Landing extends Component<LandingProps, LandingState> {
         } finally {
           this.setState({ isLoading: false });
         }
-      }
+      },
     );
   }
 
@@ -372,7 +357,7 @@ export class Landing extends Component<LandingProps, LandingState> {
             this.props.context!,
             currentFolderPath,
             this.state.selectedDocumentLocation,
-            this.state.selectedDocumentLocationName
+            this.state.selectedDocumentLocationName,
           );
           this.setState({ sharePointData: data });
         } catch (error) {
@@ -380,7 +365,7 @@ export class Landing extends Component<LandingProps, LandingState> {
         } finally {
           this.setState({ isLoading: false });
         }
-      }
+      },
     );
   };
 
@@ -410,7 +395,7 @@ export class Landing extends Component<LandingProps, LandingState> {
   private filterByLocation(): boolean {
     return shouldFilterByLocation(
       this.state.documentLocations,
-      this.state.selectedDocumentLocationName
+      this.state.selectedDocumentLocationName,
     );
   }
 
@@ -420,7 +405,7 @@ export class Landing extends Component<LandingProps, LandingState> {
       return;
     }
     this.setState(
-      prev => {
+      (prev) => {
         const folderStack = [...prev.folderStack];
         const currentFolderPath = popFolderStack
           ? folderStack.pop() || ""
@@ -434,10 +419,10 @@ export class Landing extends Component<LandingProps, LandingState> {
           currentFolderPath,
           this.state.selectedDocumentLocation,
           this.state.selectedDocumentLocationName,
-          this.filterByLocation()
+          this.filterByLocation(),
         );
         this.setState({ sharePointData: data });
-      }
+      },
     );
   }
 
@@ -445,8 +430,9 @@ export class Landing extends Component<LandingProps, LandingState> {
     const { context } = this.props;
     this.setState({ isViewsLoading: true });
 
-    const defaultNotesViewName =
-      ((getControlValue(context!, "defaultNotesView") as string) ?? "").trim();
+    const defaultNotesViewName = (
+      (getControlValue(context!, "defaultNotesView") as string) ?? ""
+    ).trim();
     const { views, defaultViewId } = await loadNoteViews(context!, defaultNotesViewName);
     this.setState({
       noteViews: views,
@@ -486,9 +472,9 @@ export class Landing extends Component<LandingProps, LandingState> {
               this.loadExistingFiles().then(() => {
                 this.setState({ isLoading: false });
               });
-            }
+            },
           );
-        }
+        },
       );
     } else {
       this.setState(
@@ -501,7 +487,7 @@ export class Landing extends Component<LandingProps, LandingState> {
           this.loadExistingFiles().then(() => {
             this.setState({ isLoading: false });
           });
-        }
+        },
       );
     }
 
@@ -520,16 +506,19 @@ export class Landing extends Component<LandingProps, LandingState> {
     }
 
     if (prevId !== currId) {
-      this.setState({
-        files: [],
-        sharePointData: [],
-        currentFolderPath: "",
-        folderStack: [],
-        selectedFiles: [],
-        isLoading: true,
-      }, () => {
-        this.loadExistingFiles().then(() => this.setState({ isLoading: false }));
-      });
+      this.setState(
+        {
+          files: [],
+          sharePointData: [],
+          currentFolderPath: "",
+          folderStack: [],
+          selectedFiles: [],
+          isLoading: true,
+        },
+        () => {
+          this.loadExistingFiles().then(() => this.setState({ isLoading: false }));
+        },
+      );
     }
   }
 
@@ -546,10 +535,7 @@ export class Landing extends Component<LandingProps, LandingState> {
   }
 
   private async waitForSharePointLocation(): Promise<void> {
-    const found = await waitForSharePointLocation(
-      this.props.context!,
-      () => this.isUnmounted
-    );
+    const found = await waitForSharePointLocation(this.props.context!, () => this.isUnmounted);
     if (found && !this.isUnmounted) {
       this.setState({ sharePointEnabled: false });
       if (this.state.sharePointDocLoc) {
@@ -588,7 +574,6 @@ export class Landing extends Component<LandingProps, LandingState> {
     const allowSharePointDropsParameter =
       !isDisabled && getControlValue(context!, "allowSharePointDrops") === true;
 
-
     if (!this.state.sharePointDocLoc && allowNoteDropsParameter) {
       acceptedFiles.forEach((file) => {
         const reader = new FileReader();
@@ -599,45 +584,47 @@ export class Landing extends Component<LandingProps, LandingState> {
             file.name,
             binaryStr,
             file.size,
-            file.type
+            file.type,
           );
 
-          toast.promise(createNotePromise, {
-            loading: getLocalString(context!, LocalStrings.Toast.Message_Uploading_Notes),
-            success: (res) => {
-              if (res.noteId) {
-                this.setState((prevState) => {
-                  const newFiles = [
-                    ...prevState.files,
-                    {
-                      filename: file.name,
-                      filesize: file.size,
-                      documentbody: binaryStr,
-                      mimetype: file.type,
-                      noteId: res.noteId,
-                      createdon: new Date(),
-                      subject: "",
-                      notetext: "",
-                    },
-                  ];
-                  newFiles.sort(
-                    (a, b) => b.createdon.getTime() - a.createdon.getTime()
-                  );
-                  return { files: newFiles };
-                });
-                getLocalString(context!, LocalStrings.Button.Label_Preview)
-                return `File ${file.name} ${getLocalString(context!, LocalStrings.Toast.Message_Upload_Success_Notes)}`;
-              } else {
-                throw new Error("Note ID was not returned");
-              }
-            },
+          toast
+            .promise(createNotePromise, {
+              loading: getLocalString(context!, LocalStrings.Toast.Message_Uploading_Notes),
+              success: (res) => {
+                if (res.noteId) {
+                  this.setState((prevState) => {
+                    const newFiles = [
+                      ...prevState.files,
+                      {
+                        filename: file.name,
+                        filesize: file.size,
+                        documentbody: binaryStr,
+                        mimetype: file.type,
+                        noteId: res.noteId,
+                        createdon: new Date(),
+                        subject: "",
+                        notetext: "",
+                      },
+                    ];
+                    newFiles.sort((a, b) => b.createdon.getTime() - a.createdon.getTime());
+                    return { files: newFiles };
+                  });
+                  getLocalString(context!, LocalStrings.Button.Label_Preview);
+                  return `File ${file.name} ${getLocalString(context!, LocalStrings.Toast.Message_Upload_Success_Notes)}`;
+                } else {
+                  throw new Error("Note ID was not returned");
+                }
+              },
 
-            error: getLocalString(context!, LocalStrings.Toast.Message_Upload_Error_Notes),
-          }).then(() => this.loadExistingFiles());
+              error: getLocalString(context!, LocalStrings.Toast.Message_Upload_Error_Notes),
+            })
+            .then(() => this.loadExistingFiles());
         };
 
         reader.onerror = () => {
-          toast.error(`${getLocalString(context!, LocalStrings.Toast.Message_Read_Error_Notes)} ${file.name}`);
+          toast.error(
+            `${getLocalString(context!, LocalStrings.Toast.Message_Read_Error_Notes)} ${file.name}`,
+          );
         };
 
         reader.readAsDataURL(file);
@@ -656,7 +643,7 @@ export class Landing extends Component<LandingProps, LandingState> {
             file.name,
             binaryStr,
             this.state.currentFolderPath,
-            defaultLocation
+            defaultLocation,
           );
 
           toast.promise(uploadPromise, {
@@ -669,7 +656,9 @@ export class Landing extends Component<LandingProps, LandingState> {
                 .catch((err) => {
                   console.error("Failed to reload files:", err);
                   this.setState({ isLoading: false });
-                  toast.error(getLocalString(context!, LocalStrings.Toast.Message_Refresh_Error_SharePoint));
+                  toast.error(
+                    getLocalString(context!, LocalStrings.Toast.Message_Refresh_Error_SharePoint),
+                  );
                 });
               return `${file.name} ${getLocalString(context!, LocalStrings.Toast.Message_Upload_Success_SharePoint)}`;
             },
@@ -681,7 +670,9 @@ export class Landing extends Component<LandingProps, LandingState> {
         };
 
         reader.onerror = () => {
-          toast.error(`${getLocalString(context!, LocalStrings.Toast.Message_Read_Error_SharePoint)} ${file.name}`);
+          toast.error(
+            `${getLocalString(context!, LocalStrings.Toast.Message_Read_Error_SharePoint)} ${file.name}`,
+          );
         };
 
         reader.readAsDataURL(file);
@@ -690,8 +681,6 @@ export class Landing extends Component<LandingProps, LandingState> {
   };
 
   loadExistingFiles = async () => {
-
-
     if (!this.props.context) return;
     this.setState({ isLoading: true });
 
@@ -701,20 +690,15 @@ export class Landing extends Component<LandingProps, LandingState> {
     }
     this.setState({ isLoading: false, files: [], sharePointData: [] });
     try {
-
       if (!this.state.sharePointDocLoc) {
         const view = this.state.selectedViewId
           ? this.state.noteViews.find((v) => v.savedqueryid === this.state.selectedViewId)
           : undefined;
         // With a view selected but not found, no notes are shown (as before).
         const files =
-          this.state.selectedViewId && !view
-            ? []
-            : await loadNotes(this.props.context!, view);
+          this.state.selectedViewId && !view ? [] : await loadNotes(this.props.context!, view);
         this.setState({ files });
-      }
-
-      else {
+      } else {
         await this.loadSharePointLocations();
         await this.getSharePointData();
       }
@@ -726,14 +710,8 @@ export class Landing extends Component<LandingProps, LandingState> {
     }
   };
 
-
   addFileAttachmentToActivity = async (file: FileData | SharePointDocument) => {
-    if (
-      !("documentbody" in file) ||
-      !file.documentbody ||
-      !file.mimetype ||
-      !file.filename
-    ) {
+    if (!("documentbody" in file) || !file.documentbody || !file.mimetype || !file.filename) {
       toast.error("Missing file data for attachment");
       return;
     }
@@ -745,7 +723,7 @@ export class Landing extends Component<LandingProps, LandingState> {
         this.props.context!,
         file.filename,
         file.documentbody,
-        file.mimetype
+        file.mimetype,
       );
 
       toast.dismiss();
@@ -762,24 +740,25 @@ export class Landing extends Component<LandingProps, LandingState> {
 
   downloadFile = async (file: FileData | SharePointDocument) => {
     if (!this.state.sharePointDocLoc) {
-      if (
-        !("documentbody" in file) ||
-        !file.documentbody ||
-        !file.mimetype ||
-        !file.filename
-      ) {
-        toast.error(getLocalString(this.props.context!, LocalStrings.Toast.Message_Download_Error_Notes));
+      if (!("documentbody" in file) || !file.documentbody || !file.mimetype || !file.filename) {
+        toast.error(
+          getLocalString(this.props.context!, LocalStrings.Toast.Message_Download_Error_Notes),
+        );
         return;
       }
 
       try {
-        toast.loading(getLocalString(this.props.context!, LocalStrings.Toast.Message_Download_Prepare_Error_Notes));
+        toast.loading(
+          getLocalString(
+            this.props.context!,
+            LocalStrings.Toast.Message_Download_Prepare_Error_Notes,
+          ),
+        );
         let base64Data = file.documentbody;
 
         const dataUrlPrefix = "base64,";
         if (base64Data.includes(dataUrlPrefix)) {
-          const base64Index =
-            base64Data.indexOf(dataUrlPrefix) + dataUrlPrefix.length;
+          const base64Index = base64Data.indexOf(dataUrlPrefix) + dataUrlPrefix.length;
           base64Data = base64Data.substring(base64Index);
         }
 
@@ -823,12 +802,15 @@ export class Landing extends Component<LandingProps, LandingState> {
         } catch (error) {
           console.error("Error opening the file:", error);
           toast.error(
-            `${getLocalString(this.props.context!, LocalStrings.Toast.Message_Download_Error_Open_Error_SharePoint)} ${error instanceof Error ? error.message : "Unknown error"
-            }`
+            `${getLocalString(this.props.context!, LocalStrings.Toast.Message_Download_Error_Open_Error_SharePoint)} ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
           );
         }
       } else {
-        toast.error(getLocalString(this.props.context!, LocalStrings.Toast.Message_Download_Error_SharePoint));
+        toast.error(
+          getLocalString(this.props.context!, LocalStrings.Toast.Message_Download_Error_SharePoint),
+        );
       }
     }
   };
@@ -843,7 +825,7 @@ export class Landing extends Component<LandingProps, LandingState> {
     if (!this.state.sharePointDocLoc) {
       this.setState((prevState) => ({
         files: prevState.files.map((file) =>
-          file.noteId === fileId ? { ...file, isLoading: true } : file
+          file.noteId === fileId ? { ...file, isLoading: true } : file,
         ),
       }));
 
@@ -858,7 +840,7 @@ export class Landing extends Component<LandingProps, LandingState> {
         error: (err) => {
           this.setState((prevState) => ({
             files: prevState.files.map((file) =>
-              file.noteId === fileId ? { ...file, isLoading: false } : file
+              file.noteId === fileId ? { ...file, isLoading: false } : file,
             ),
           }));
           console.error("Toast Error: ", err);
@@ -869,11 +851,16 @@ export class Landing extends Component<LandingProps, LandingState> {
       this.setState({ isLoading: true });
 
       const file = this.state.sharePointData.find(
-        (f: SharePointDocument) => f.sharepointdocumentid === fileId
+        (f: SharePointDocument) => f.sharepointdocumentid === fileId,
       );
       if (!file) {
         this.setState({ isLoading: false });
-        toast.error(getLocalString(this.props.context!, LocalStrings.Toast.Message_Delete_Error_File_Not_Found_SharePoint));
+        toast.error(
+          getLocalString(
+            this.props.context!,
+            LocalStrings.Toast.Message_Delete_Error_File_Not_Found_SharePoint,
+          ),
+        );
         return;
       }
       toast.promise(
@@ -883,14 +870,14 @@ export class Landing extends Component<LandingProps, LandingState> {
           file.documentid,
           file.filetype,
           this.state.selectedDocumentLocation!,
-          this.filterByLocation()
+          this.filterByLocation(),
         ),
         {
           loading: getLocalString(this.props.context!, LocalStrings.Toast.Message_Delete_Loading),
           success: () => {
             this.setState((prevState) => ({
               sharePointData: prevState.sharePointData.filter(
-                (f) => f.sharepointdocumentid !== fileId
+                (f) => f.sharepointdocumentid !== fileId,
               ),
               isLoading: false,
             }));
@@ -899,10 +886,11 @@ export class Landing extends Component<LandingProps, LandingState> {
           error: (err) => {
             this.setState({ isLoading: false });
             console.error("Error deleting SharePoint document: ", err);
-            return `${getLocalString(this.props.context!, LocalStrings.Toast.Message_Delete_Failure)} ${err.message || "Unknown error"
-              }`;
+            return `${getLocalString(this.props.context!, LocalStrings.Toast.Message_Delete_Failure)} ${
+              err.message || "Unknown error"
+            }`;
           },
-        }
+        },
       );
     }
   };
@@ -922,9 +910,7 @@ export class Landing extends Component<LandingProps, LandingState> {
         if (response.success) {
           this.setState((prevState) => ({
             files: prevState.files.map((file) =>
-              file.noteId === noteId
-                ? { ...file, filename, isEditing: false }
-                : file
+              file.noteId === noteId ? { ...file, filename, isEditing: false } : file,
             ),
           }));
           this.toggleEditModal();
@@ -938,11 +924,18 @@ export class Landing extends Component<LandingProps, LandingState> {
     const { context } = this.props;
     const { newFolderName, currentFolderPath } = this.state;
     if (!newFolderName) {
-      toast.error(getLocalString(this.props.context!, LocalStrings.Toast.Message_Create_Folder_Empty_Error));
+      toast.error(
+        getLocalString(this.props.context!, LocalStrings.Toast.Message_Create_Folder_Empty_Error),
+      );
       return;
     }
     if (!isValidSharePointFolderName(newFolderName)) {
-      toast.error(getLocalString(this.props.context!, LocalStrings.Toast.Message_Create_Folder_Invalid_Name_Error));
+      toast.error(
+        getLocalString(
+          this.props.context!,
+          LocalStrings.Toast.Message_Create_Folder_Invalid_Name_Error,
+        ),
+      );
       return;
     }
     const folderCreationPromise = createSharePointFolder(
@@ -950,11 +943,14 @@ export class Landing extends Component<LandingProps, LandingState> {
       newFolderName,
       currentFolderPath,
       this.state.selectedDocumentLocation!,
-      this.filterByLocation()
+      this.filterByLocation(),
     );
 
     toast.promise(folderCreationPromise, {
-      loading: getLocalString(this.props.context!, LocalStrings.Toast.Message_Create_Folder_Loading),
+      loading: getLocalString(
+        this.props.context!,
+        LocalStrings.Toast.Message_Create_Folder_Loading,
+      ),
       success: (data) => {
         this.toggleModal();
         this.loadExistingFiles();
@@ -973,7 +969,7 @@ export class Landing extends Component<LandingProps, LandingState> {
 
       if (this.state.sharePointDocLoc) {
         file = this.state.sharePointData.find(
-          (f: SharePointDocument) => f.sharepointdocumentid === fileId
+          (f: SharePointDocument) => f.sharepointdocumentid === fileId,
         );
       } else {
         file = this.state.files.find((f: FileData) => f.noteId === fileId);
@@ -997,9 +993,7 @@ export class Landing extends Component<LandingProps, LandingState> {
             this.removeFile(file.sharepointdocumentid);
             break;
           default:
-            toast.error(
-              `Action ${action} is not supported for SharePoint documents.`
-            );
+            toast.error(`Action ${action} is not supported for SharePoint documents.`);
         }
       } else if (!this.state.sharePointDocLoc && "noteId" in file) {
         // Actions for notes
@@ -1068,41 +1062,30 @@ export class Landing extends Component<LandingProps, LandingState> {
   private saveUserSettings(
     notesOrSharePoint: boolean,
     selectedDocumentLocation: string | null,
-    selectedDocumentLocationName: string
+    selectedDocumentLocationName: string,
   ) {
     return saveUserSettings(
       this.props.context!,
       notesOrSharePoint,
       selectedDocumentLocation,
-      selectedDocumentLocationName
+      selectedDocumentLocationName,
     );
   }
-  toggleSharePointDocLoc = async (
-    _: React.MouseEvent<HTMLElement>,
-    checked?: boolean
-  ) => {
+  toggleSharePointDocLoc = async (_: React.MouseEvent<HTMLElement>, checked?: boolean) => {
     const sharePointDocLoc = !!checked;
-    const { selectedDocumentLocation, selectedDocumentLocationName } =
-      this.state;
-    this.setState(
-      { sharePointDocLoc, selectedFiles: [], isLoading: true },
-      async () => {
-        this.loadExistingFiles();
-      }
-    );
+    const { selectedDocumentLocation, selectedDocumentLocationName } = this.state;
+    this.setState({ sharePointDocLoc, selectedFiles: [], isLoading: true }, async () => {
+      this.loadExistingFiles();
+    });
   };
-  toggleRememberLocation = async (
-    _: React.MouseEvent<HTMLElement>,
-    checked?: boolean
-  ) => {
+  toggleRememberLocation = async (_: React.MouseEvent<HTMLElement>, checked?: boolean) => {
     const sharePointDocLoc = !!checked;
-    const { selectedDocumentLocation, selectedDocumentLocationName } =
-      this.state;
+    const { selectedDocumentLocation, selectedDocumentLocationName } = this.state;
     this.setState({ userPreference: !!checked }, async () => {
       await this.saveUserSettings(
         sharePointDocLoc,
         selectedDocumentLocation,
-        selectedDocumentLocationName
+        selectedDocumentLocationName,
       );
     });
   };
@@ -1116,7 +1099,7 @@ export class Landing extends Component<LandingProps, LandingState> {
 
   async handleDropdownChange(
     event: React.FormEvent<HTMLDivElement>,
-    option?: IDropdownOption
+    option?: IDropdownOption,
   ): Promise<void> {
     const userPreference = false;
     if (option) {
@@ -1133,31 +1116,26 @@ export class Landing extends Component<LandingProps, LandingState> {
           await this.saveUserSettings(
             userPreference,
             selectedDocumentLocation,
-            selectedDocumentLocationName
+            selectedDocumentLocationName,
           );
           this.setState({ currentFolderPath: "" }, () => {
             this.loadExistingFiles();
           });
-        }
+        },
       );
     }
   }
 
-  async handleViewChange(
-    _e: React.FormEvent<HTMLDivElement>,
-    option?: IDropdownOption
-  ) {
+  async handleViewChange(_e: React.FormEvent<HTMLDivElement>, option?: IDropdownOption) {
     if (!option) return;
 
-    this.setState({ selectedViewId: option.key as string }, () =>
-      this.loadExistingFiles()
-    );
+    this.setState({ selectedViewId: option.key as string }, () => this.loadExistingFiles());
   }
 
   toggleFileSelection = (
     fileId: string,
     file?: SharePointDocument,
-    forceSelect: boolean = false
+    forceSelect: boolean = false,
   ) => {
     if (file && file.filetype === "folder") {
       this.handleFolderClick(file.relativelocation);
@@ -1185,18 +1163,14 @@ export class Landing extends Component<LandingProps, LandingState> {
 
   handleFolderNameChange = (
     _: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>,
-    newValue?: string
+    newValue?: string,
   ) => {
     this.setState({ newFolderName: newValue || "" });
   };
 
-  private t = (key: LocalizationKey): string =>
-    getLocalString(this.props.context!, key);
+  private t = (key: LocalizationKey): string => getLocalString(this.props.context!, key);
 
-  private handleNoteTileContextMenu = (
-    event: React.MouseEvent<HTMLElement>,
-    file: FileData
-  ) => {
+  private handleNoteTileContextMenu = (event: React.MouseEvent<HTMLElement>, file: FileData) => {
     if (event.button === 2 && file.noteId) {
       event.preventDefault();
       const isSelected = this.state.selectedFiles.includes(file.noteId);
@@ -1207,7 +1181,7 @@ export class Landing extends Component<LandingProps, LandingState> {
 
   private handleSharePointTileContextMenu = (
     event: React.MouseEvent<HTMLElement>,
-    item: SharePointDocument
+    item: SharePointDocument,
   ) => {
     event.preventDefault();
     if (item.filetype !== "folder" && event.button === 2 && item.sharepointdocumentid) {
@@ -1221,7 +1195,7 @@ export class Landing extends Component<LandingProps, LandingState> {
     const { editingFileId } = this.state;
     this.setState((prev) => ({
       files: prev.files.map((file) =>
-        file.noteId === editingFileId ? { ...file, filename } : file
+        file.noteId === editingFileId ? { ...file, filename } : file,
       ),
     }));
   };

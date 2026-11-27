@@ -20,11 +20,7 @@ export function formatFileSize(sizeInBytes: number): string {
  * last few characters and the extension ("Quarterly...ion.pdf"); folders, and
  * names without an extension, are cut at the end ("Invoices & Rece...").
  */
-export function middleEllipsis(
-  filename: string,
-  maxLength = 18,
-  isFolder = false
-): string {
+export function middleEllipsis(filename: string, maxLength = 18, isFolder = false): string {
   if (filename.length < maxLength) {
     return filename;
   }
@@ -70,21 +66,17 @@ export function addRegardingFilter(fetchXml: string, recordId: string): string {
 /** Notes whose file name contains the search text. */
 export function filterNotes(files: FileData[], searchText: string): FileData[] {
   return files.filter(
-    (file) =>
-      file.filename &&
-      file.filename.toLowerCase().includes(searchText.toLowerCase())
+    (file) => file.filename && file.filename.toLowerCase().includes(searchText.toLowerCase()),
   );
 }
 
 /** SharePoint items matching the search text, folders first, then by name. */
 export function filterAndSortSharePointItems(
   items: SharePointDocument[],
-  searchText: string
+  searchText: string,
 ): SharePointDocument[] {
   return items
-    .filter((item) =>
-      item.fullname.toLowerCase().includes(searchText.toLowerCase().trim())
-    )
+    .filter((item) => item.fullname.toLowerCase().includes(searchText.toLowerCase().trim()))
     .sort((a, b) => {
       if (a.filetype === "folder" && b.filetype !== "folder") {
         return -1;

@@ -117,7 +117,7 @@ p.file-size {
   justify-content: center;
 }
 
-.scrollable-area{
+.scrollable-area {
   height: 96%;
   display: flex;
   flex-direction: column;

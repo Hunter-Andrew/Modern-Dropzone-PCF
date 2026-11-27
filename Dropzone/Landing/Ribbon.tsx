@@ -107,8 +107,7 @@ export const Ribbon: React.FC<RibbonProps> = ({
     selectedFiles.length !== 1 ||
     !files.some(
       (file) =>
-        selectedFiles.includes(file.noteId!) &&
-        (isImage(file.mimetype!) || isPDF(file.mimetype!))
+        selectedFiles.includes(file.noteId!) && (isImage(file.mimetype!) || isPDF(file.mimetype!)),
     );
 
   const commandButtons = (
@@ -179,11 +178,8 @@ export const Ribbon: React.FC<RibbonProps> = ({
         text: t(LocalStrings.Button.Label_Rename),
         iconProps: { iconName: "Edit" },
         onClick: () => onAction("edit"),
-        disabled:
-          selectedFiles.length === 0 ||
-          selectedFiles.length >= 2 ||
-          formIsDisabled,
-      }
+        disabled: selectedFiles.length === 0 || selectedFiles.length >= 2 || formIsDisabled,
+      },
     );
   }
 

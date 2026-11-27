@@ -16,7 +16,10 @@ const root = path.join(__dirname, "..");
 const files = [
   { file: "package.json", pattern: /^(  "version": ")([^"]+)/m },
   { file: "package-lock.json", pattern: /^(  "version": ")([^"]+)/m },
-  { file: "package-lock.json", pattern: /("packages": \{\s*"": \{\s*"name": "[^"]*",\s*"version": ")([^"]+)/ },
+  {
+    file: "package-lock.json",
+    pattern: /("packages": \{\s*"": \{\s*"name": "[^"]*",\s*"version": ")([^"]+)/,
+  },
   { file: "Dropzone/ControlManifest.Input.xml", pattern: /(<control [^>]*\bversion=")([^"]+)/ },
   { file: "Dropzone/version.ts", pattern: /(CONTROL_VERSION = ")([^"]+)/ },
   { file: "Solution/ModernDropzone/src/Other/Solution.xml", pattern: /(<Version>)([^<]+)/ },
@@ -50,7 +53,10 @@ function set(version) {
   for (const entry of files) {
     const file = path.join(root, entry.file);
     const { text } = read(entry);
-    fs.writeFileSync(file, text.replace(entry.pattern, (_, before) => before + version));
+    fs.writeFileSync(
+      file,
+      text.replace(entry.pattern, (_, before) => before + version),
+    );
   }
   console.log(`Set version ${version}.`);
 }

@@ -56,19 +56,21 @@ describe("addRegardingFilter", () => {
     const fetch =
       '<fetch><entity name="annotation"><filter type="and"><condition attribute="ownerid" operator="eq-userid"/></filter></entity></fetch>';
     expect(addRegardingFilter(fetch, id)).toBe(
-      `<fetch><entity name="annotation"><filter type="and">${condition}<condition attribute="ownerid" operator="eq-userid"/></filter></entity></fetch>`
+      `<fetch><entity name="annotation"><filter type="and">${condition}<condition attribute="ownerid" operator="eq-userid"/></filter></entity></fetch>`,
     );
   });
 
   it("adds a filter when the view has none", () => {
     const fetch = '<fetch><entity name="annotation"><attribute name="filename"/></entity></fetch>';
     expect(addRegardingFilter(fetch, id)).toBe(
-      `<fetch><entity name="annotation"><attribute name="filename"/><filter type="and">${condition}</filter></entity></fetch>`
+      `<fetch><entity name="annotation"><attribute name="filename"/><filter type="and">${condition}</filter></entity></fetch>`,
     );
   });
 
   it("escapes the record id", () => {
-    expect(addRegardingFilter("<fetch><entity></entity></fetch>", 'a"b')).toContain('value="a&quot;b"');
+    expect(addRegardingFilter("<fetch><entity></entity></fetch>", 'a"b')).toContain(
+      'value="a&quot;b"',
+    );
   });
 });
 
@@ -77,7 +79,10 @@ const note = (filename: string): FileData => ({ filename, filesize: 1, createdon
 describe("filterNotes", () => {
   it("matches the file name case-insensitively", () => {
     const notes = [note("Budget.xlsx"), note("photo.png"), note("budget-2.pdf")];
-    expect(filterNotes(notes, "BUDGET").map((n) => n.filename)).toEqual(["Budget.xlsx", "budget-2.pdf"]);
+    expect(filterNotes(notes, "BUDGET").map((n) => n.filename)).toEqual([
+      "Budget.xlsx",
+      "budget-2.pdf",
+    ]);
   });
 
   it("returns everything for an empty search", () => {
@@ -90,13 +95,25 @@ const spItem = (fullname: string, filetype: string) =>
 
 describe("filterAndSortSharePointItems", () => {
   it("puts folders first, then sorts by name", () => {
-    const items = [spItem("b.docx", "docx"), spItem("Zeta", "folder"), spItem("A.pdf", "pdf"), spItem("alpha", "folder")];
-    expect(filterAndSortSharePointItems(items, "").map((i) => i.fullname)).toEqual(["alpha", "Zeta", "A.pdf", "b.docx"]);
+    const items = [
+      spItem("b.docx", "docx"),
+      spItem("Zeta", "folder"),
+      spItem("A.pdf", "pdf"),
+      spItem("alpha", "folder"),
+    ];
+    expect(filterAndSortSharePointItems(items, "").map((i) => i.fullname)).toEqual([
+      "alpha",
+      "Zeta",
+      "A.pdf",
+      "b.docx",
+    ]);
   });
 
   it("filters by name, ignoring case and surrounding spaces", () => {
     const items = [spItem("Contract.pdf", "pdf"), spItem("Invoice.pdf", "pdf")];
-    expect(filterAndSortSharePointItems(items, "  contract ").map((i) => i.fullname)).toEqual(["Contract.pdf"]);
+    expect(filterAndSortSharePointItems(items, "  contract ").map((i) => i.fullname)).toEqual([
+      "Contract.pdf",
+    ]);
   });
 
   it("doesn't change the list it's given", () => {

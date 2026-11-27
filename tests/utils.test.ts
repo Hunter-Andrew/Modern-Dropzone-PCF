@@ -13,7 +13,9 @@ import { mockContext, RECORD_ID } from "./mockContext";
 
 describe("escapeXml", () => {
   it("escapes the five XML special characters", () => {
-    expect(escapeXml(`Tom & "Jerry's" <files>`)).toBe("Tom &amp; &quot;Jerry&apos;s&quot; &lt;files&gt;");
+    expect(escapeXml(`Tom & "Jerry's" <files>`)).toBe(
+      "Tom &amp; &quot;Jerry&apos;s&quot; &lt;files&gt;",
+    );
   });
 
   it("turns null and undefined into an empty string", () => {
@@ -27,12 +29,25 @@ describe("isValidSharePointFolderName", () => {
     expect(isValidSharePointFolderName(name)).toBe(true);
   });
 
-  it.each(["", "   ", "a/b", "a\\b", 'a"b', "a*b", "a:b", "a<b", "a>b", "a?b", "a|b", " lead", "trail ", ".hidden", "dot."])(
-    "rejects %p",
-    (name) => {
-      expect(isValidSharePointFolderName(name)).toBe(false);
-    }
-  );
+  it.each([
+    "",
+    "   ",
+    "a/b",
+    "a\\b",
+    'a"b',
+    "a*b",
+    "a:b",
+    "a<b",
+    "a>b",
+    "a?b",
+    "a|b",
+    " lead",
+    "trail ",
+    ".hidden",
+    "dot.",
+  ])("rejects %p", (name) => {
+    expect(isValidSharePointFolderName(name)).toBe(false);
+  });
 });
 
 describe("file type checks", () => {

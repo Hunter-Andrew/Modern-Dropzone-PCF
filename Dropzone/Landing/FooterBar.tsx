@@ -104,7 +104,7 @@ export interface FooterBarProps {
   onAddLocation: () => void;
   onSettingsClick: (
     ev?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>,
-    item?: IContextualMenuItem
+    item?: IContextualMenuItem,
   ) => boolean | void;
 
   showViewPicker: boolean;

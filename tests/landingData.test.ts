@@ -30,7 +30,12 @@ const view = (name: string, fetchxml = "<fetch><entity></entity></fetch>"): Note
 });
 
 describe("loadNoteViews", () => {
-  const views = [view("My Notes"), view("Notes Associated View"), view("All Notes"), view("Quick Find Annotations")];
+  const views = [
+    view("My Notes"),
+    view("Notes Associated View"),
+    view("All Notes"),
+    view("Quick Find Annotations"),
+  ];
 
   it("hides the system views and puts All Notes first", async () => {
     const { context } = mockContext({ records: { savedquery: views } });
@@ -107,7 +112,12 @@ describe("shouldFilterByLocation", () => {
   const location = (name: string) => ({ name, sharepointdocumentlocationid: name });
 
   it("is false when the only location is the automatic default one", () => {
-    expect(shouldFilterByLocation([location("Documents on Default Site 1")], "Documents on Default Site 1")).toBe(false);
+    expect(
+      shouldFilterByLocation(
+        [location("Documents on Default Site 1")],
+        "Documents on Default Site 1",
+      ),
+    ).toBe(false);
   });
 
   it("is true otherwise", () => {
@@ -115,8 +125,8 @@ describe("shouldFilterByLocation", () => {
     expect(
       shouldFilterByLocation(
         [location("Documents on Default Site 1"), location("Custom")],
-        "Documents on Default Site 1"
-      )
+        "Documents on Default Site 1",
+      ),
     ).toBe(true);
   });
 });

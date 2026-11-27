@@ -22,7 +22,7 @@ import { Translate } from "../utils";
 
 type TextChangeHandler = (
   event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>,
-  newValue?: string
+  newValue?: string,
 ) => void;
 
 export interface PdfPreviewModalProps {
@@ -57,8 +57,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({ file, onClose 
         height="100%"
       >
         <p>
-          Your browser does not support PDFs.{" "}
-          <a href={file.documentbody}>Download the PDF</a>.
+          Your browser does not support PDFs. <a href={file.documentbody}>Download the PDF</a>.
         </p>
       </object>
     </div>
@@ -250,7 +249,11 @@ export const AddLocationDialog: React.FC<AddLocationDialogProps> = ({
       />
     </Stack>
     <DialogFooter>
-      <PrimaryButton onClick={onSave} text={t(LocalStrings.Dialog.AddLocation.Button_Save)} disabled={!canSave} />
+      <PrimaryButton
+        onClick={onSave}
+        text={t(LocalStrings.Dialog.AddLocation.Button_Save)}
+        disabled={!canSave}
+      />
       <DefaultButton onClick={onCancel} text={t(LocalStrings.Dialog.AddLocation.Button_Cancel)} />
     </DialogFooter>
   </Dialog>

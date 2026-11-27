@@ -30,7 +30,7 @@ export function errorMessage(error: unknown): string {
 }
 
 export async function getEntityMetadata(
-  context: ComponentFramework.Context<IInputs>
+  context: ComponentFramework.Context<IInputs>,
 ): Promise<EntityMetadata | null> {
   const page = getPage(context);
   if (!page) {
@@ -104,9 +104,7 @@ const SHAREPOINT_INVALID_CHARS = /["*:<>?/\\|]/;
 /** Returns true if the name can be used for a SharePoint folder. */
 export function isValidSharePointFolderName(name: string): boolean {
   return (
-    name.trim().length > 0 &&
-    !SHAREPOINT_INVALID_CHARS.test(name) &&
-    !/^[\s.]|[\s.]$/.test(name)
+    name.trim().length > 0 && !SHAREPOINT_INVALID_CHARS.test(name) && !/^[\s.]|[\s.]$/.test(name)
   );
 }
 
@@ -148,12 +146,10 @@ export type LocalizationKey = Values<typeof LocalStrings>;
 /** Looks up a localized string; passed to child components as `t`. */
 export type Translate = (key: LocalizationKey) => string;
 
-export const getLocalString = (
-  context: Context,
-  key: LocalizationKey
-): string => context.resources.getString(key);
+export const getLocalString = (context: Context, key: LocalizationKey): string =>
+  context.resources.getString(key);
 
-export function b64toBlob(b64Data: string, contentType = '', sliceSize = 512) {
+export function b64toBlob(b64Data: string, contentType = "", sliceSize = 512) {
   if (b64Data.startsWith("data:application/pdf;base64,")) {
     b64Data = b64Data.replace("data:application/pdf;base64,", "");
   }
@@ -172,4 +168,3 @@ export function b64toBlob(b64Data: string, contentType = '', sliceSize = 512) {
 
   return new Blob(byteArrays, { type: contentType });
 }
-

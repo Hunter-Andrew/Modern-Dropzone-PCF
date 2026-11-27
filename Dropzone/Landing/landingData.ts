@@ -49,7 +49,7 @@ export interface NoteViewsResult {
  */
 export async function loadNoteViews(
   context: Context,
-  defaultViewName: string
+  defaultViewName: string,
 ): Promise<NoteViewsResult> {
   try {
     const res = await getNoteViews(context);
@@ -67,9 +67,7 @@ export async function loadNoteViews(
     const findByName = (name: string) =>
       views.find((v) => v.name.toLowerCase() === name.toLowerCase());
     const defaultView =
-      (defaultViewName && findByName(defaultViewName)) ||
-      findByName("All Notes") ||
-      views[0];
+      (defaultViewName && findByName(defaultViewName)) || findByName("All Notes") || views[0];
 
     return { views, defaultViewId: defaultView?.savedqueryid };
   } catch (err) {
@@ -92,7 +90,7 @@ export async function loadNotes(context: Context, view?: NoteView): Promise<File
       const fetch = recordId ? addRegardingFilter(view.fetchxml, recordId) : view.fetchxml;
       const res = await context.webAPI.retrieveMultipleRecords(
         "annotation",
-        `?fetchXml=${encodeURIComponent(fetch)}&$select=${NOTE_COLUMNS}`
+        `?fetchXml=${encodeURIComponent(fetch)}&$select=${NOTE_COLUMNS}`,
       );
       rows = res.entities;
     }
@@ -135,7 +133,7 @@ export async function hasNoSharePointLocation(context: Context): Promise<boolean
  */
 export function shouldFilterByLocation(
   locations: DocumentLocation[],
-  selectedLocationName: string
+  selectedLocationName: string,
 ): boolean {
   return !(locations.length === 1 && selectedLocationName === DEFAULT_LOCATION_NAME);
 }
@@ -146,7 +144,7 @@ export async function loadSharePointFolder(
   folderPath: string,
   locationId: string | null,
   locationName: string,
-  filterByLocation?: boolean
+  filterByLocation?: boolean,
 ): Promise<SharePointDocument[]> {
   return getSharePointFolderData(context, folderPath, locationId, locationName, filterByLocation);
 }
@@ -161,7 +159,7 @@ export async function waitForSharePointLocation(
   context: Context,
   isCancelled: () => boolean,
   attempts = 8,
-  intervalMs = 3000
+  intervalMs = 3000,
 ): Promise<boolean> {
   for (let i = 0; i < attempts; i++) {
     await delay(intervalMs);
@@ -213,22 +211,17 @@ export async function readRememberLocation(context: Context): Promise<boolean | 
   if (!settings) return false;
 
   const metadata = await getEntityMetadata(context);
-  if (
-    settings.tableName !== metadata?.schemaName ||
-    settings.entityId !== metadata?.entityId
-  ) {
+  if (settings.tableName !== metadata?.schemaName || settings.entityId !== metadata?.entityId) {
     return undefined;
   }
-  return typeof settings.NotesOrSharePoint === "undefined"
-    ? settings.NotesOrSharePoint
-    : undefined;
+  return typeof settings.NotesOrSharePoint === "undefined" ? settings.NotesOrSharePoint : undefined;
 }
 
 export async function saveUserSettings(
   context: Context,
   notesOrSharePoint: boolean,
   selectedDocumentLocation: string | null,
-  selectedDocumentLocationName: string
+  selectedDocumentLocationName: string,
 ): Promise<void> {
   const metadata = await getEntityMetadata(context);
   const settings: UserSettings = {

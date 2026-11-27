@@ -9,7 +9,6 @@ export interface FileData {
   createdon: Date;
   isLoading?: boolean;
   isEditing?: boolean;
-  
 }
 export interface SharePointDocument {
   readurl: string;
@@ -36,7 +35,7 @@ export interface SharePointDocument {
   servicetype: number;
   author: string;
   filesize: number;
-  filename?:string;
+  filename?: string;
 }
 
 export interface PreviewFile {
@@ -52,7 +51,7 @@ export interface EntityMetadata {
   entityId: string;
 }
 
-export type ActivityType = 
+export type ActivityType =
   | "email"
   | "phonecall"
   | "appointment"
@@ -68,35 +67,30 @@ export type ActivityType =
   | "appointmentrecurrence";
 
 export type GenericActionResponse = {
-    success: boolean;
-    message: string;
-  };
+  success: boolean;
+  message: string;
+};
 
-  export interface NoteView {
-    savedqueryid: string;   // GUID
-    name: string;
-    fetchxml: string;
-  }
-  
-  export type NoteViewSuccess = {
-    success: true;
-    data: NoteView[];
-  };
-  
-  export type NoteViewError = {
-    success: false;
-    message: string;
-    data: [];
-  };
-  
-  export type NoteViewResult = NoteViewSuccess | NoteViewError;
+export interface NoteView {
+  savedqueryid: string; // GUID
+  name: string;
+  fetchxml: string;
+}
 
-export type FileAction =
-  | "edit"
-  | "download"
-  | "delete"
-  | "preview"
-  | "addToActivityAttachment";
+export type NoteViewSuccess = {
+  success: true;
+  data: NoteView[];
+};
+
+export type NoteViewError = {
+  success: false;
+  message: string;
+  data: [];
+};
+
+export type NoteViewResult = NoteViewSuccess | NoteViewError;
+
+export type FileAction = "edit" | "download" | "delete" | "preview" | "addToActivityAttachment";
 
 export interface DocumentLocation {
   name: string;
