@@ -39,16 +39,20 @@ export function mockContext(options: MockOptions = {}) {
 }
 
 /**
- * Makes fetch answer the entity metadata request (used by getEntityMetadata)
- * and, optionally, SharePoint document locations.
+ * Makes fetch answer the entity metadata request (used by getEntityMetadata),
+ * SharePoint document locations and the location folder URL lookup.
  */
-export function mockFetch(options: { schemaName?: string; locations?: unknown[] } = {}) {
+export function mockFetch(
+  options: { schemaName?: string; locations?: unknown[]; locationUrl?: string } = {},
+) {
   const fetchMock = jest.fn(async (url: string) => {
     const body = url.includes("EntityDefinitions")
       ? { SchemaName: options.schemaName ?? "Account", LogicalCollectionName: "accounts" }
-      : url.includes("sharepointdocumentlocations")
-        ? { value: options.locations ?? [] }
-        : {};
+      : url.includes("RetrieveAbsoluteAndSiteCollectionUrl")
+        ? { AbsoluteUrl: options.locationUrl ?? "", SiteCollectionUrl: "" }
+        : url.includes("sharepointdocumentlocations")
+          ? { value: options.locations ?? [] }
+          : {};
     return { ok: true, status: 200, json: async () => body } as Response;
   });
   global.fetch = fetchMock as unknown as typeof fetch;

@@ -9,9 +9,7 @@ export const LocalStrings = {
     Placeholder_Record_Not_Created: "Input__Placeholder_Record_Not_Created",
   },
   Button: {
-    Label_Preview: "Button__Label_Preview",
-    Label_Rename: "Button__Label_Rename",
-    Label_Download: "Button__Label_Download",
+    Label_Open: "Button__Label_Open",
     Label_Delete: "Button__Label_Delete",
     Label_Actions: "Button__Label_Actions",
     Label_CreateFolder: "Button__Label_CreateFolder",
@@ -22,12 +20,6 @@ export const LocalStrings = {
     Label_Remove_Folder: "Button__Label_Remove_Folder",
   },
   Dialog: {
-    EditFile: {
-      Title: "Dialog__Title_Edit_File",
-      Description: "Dialog__Description_Edit_File",
-      Button_Save: "Dialog__Button_Save_Edit_File",
-      Button_Cancel: "Dialog__Button_Cancel_Edit_File",
-    },
     DeleteFolder: {
       Confirmation: "Dialog__Button_Delete_Confirmation",
       Button_Yes: "Dialog__Button_Yes",
@@ -50,38 +42,32 @@ export const LocalStrings = {
       Button_Cancel: "Dialog__Button_Cancel_AddLocation",
     },
   },
-  Toggle: {
-    Label_SharePointDocuments: "Toggle__Label_SharePointDocuments",
-    Value_On: "Toggle__Value_On_SharePointDocuments",
-    Value_Off: "Toggle__Value_Off_SharePointDocuments",
+  Link: {
+    /** "View files in {0}", where {0} is the SharePoint link. */
+    View_In_SharePoint: "Link__View_In_SharePoint",
+    SharePoint: "Link__SharePoint",
   },
   Toast: {
-    Message_Uploading_Notes: "Toast__Message_Uploading_Notes",
-    Message_Upload_Success_Notes: "Toast__Message_Upload_Success_Notes",
-    Message_Upload_Error_Notes: "Toast__Message_Upload_Error_Notes",
-    Message_Read_Error_Notes: "Toast__Message_Read_Error_Notes",
-
     Message_Upload_Success_SharePoint: "Toast__Message_Upload_Success_SharePoint",
     Message_Upload_Error_SharePoint: "Toast__Message_Upload_Error_SharePoint",
     Message_Refresh_Error_SharePoint: "Toast__Message_Refresh_Error_SharePoint",
     Message_Uploading_SharePoint: "Toast__Message_Uploading_SharePoint",
     Message_Read_Error_SharePoint: "Toast__Message_Read_Error_SharePoint",
+    /** "{0} ({1}) is too large to upload here." {0}: file name, {1}: size. */
+    Message_Upload_Too_Large: "Toast__Message_Upload_Too_Large",
+    /** "Upload it in {0} instead.", where {0} is the SharePoint link. */
+    Message_Upload_Too_Large_Hint: "Toast__Message_Upload_Too_Large_Hint",
+    /** "{0} ({1}) could not be read. ..." {0}: file name, {1}: size. */
+    Message_Read_Error_Large: "Toast__Message_Read_Error_Large",
 
-    Message_Download_Error_Notes: "Toast__Message_Download_Error_Notes",
-    Message_Download_Prepare_Error_Notes: "Toast__Message_Download_Prepare_Error_Notes",
-    Message_Download_Error_Open_Error_SharePoint: "Toast__Message_Download_Open_Error_SharePoint",
-
-    Message_Download_Error_SharePoint: "Toast__Message_Download_Error_SharePoint",
+    Message_Open_Error: "Toast__Message_Download_Open_Error_SharePoint",
+    Message_Open_Missing_Url: "Toast__Message_Download_Error_SharePoint",
 
     Message_Delete_Error_File_Not_Found_SharePoint:
       "Toast__Message_Delete_Error_File_Not_Found_SharePoint",
     Message_Delete_Loading: "Toast__Message_Delete_Loading",
     Message_Delete_Success: "Toast__Message_Delete_Success",
     Message_Delete_Failure: "Toast__Message_Delete_Failure",
-
-    Message_Save_Loading: "Toast__Message_Save_Loading",
-    Message_Save_Success: "Toast__Message_Save_Success",
-    Message_Save_Error: "Toast__Message_Save_Error",
 
     Message_Create_Folder_Loading: "Toast__Message_Create_Folder_Loading",
     Message_Create_Folder_Success: "Toast__Message_Create_Folder_Success",

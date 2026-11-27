@@ -1,14 +1,13 @@
 import * as React from "react";
 import { Icon, IconButton, TooltipHost } from "@fluentui/react";
 import { LocalStrings } from "../consts/LocalStrings";
-import { FileData, SharePointDocument } from "../Interfaces";
+import { SharePointDocument } from "../Interfaces";
 import { Translate } from "../utils";
 import FolderIcon from "./FolderIcon";
 import { FILE_ICON_SIZE, getFileTypeIconProps } from "./fileTypeIcons";
 import { formatFileSize, getFileExtension, middleEllipsis } from "./landingHelpers";
 
-// The tiles shown inside the drop zone: one grid for Notes and one for the
-// current SharePoint folder.
+// The tiles for the files and folders of the current SharePoint folder.
 
 const fileIcon = (filename: string) => (
   <Icon
@@ -25,40 +24,6 @@ const swallow = (event: React.MouseEvent) => {
   event.preventDefault();
   event.stopPropagation();
 };
-
-export interface NoteFileGridProps {
-  files: FileData[];
-  selectedFiles: string[];
-  onTileClick: (file: FileData) => void;
-  onTileContextMenu: (event: React.MouseEvent<HTMLElement>, file: FileData) => void;
-}
-
-export const NoteFileGrid: React.FC<NoteFileGridProps> = ({
-  files,
-  selectedFiles,
-  onTileClick,
-  onTileContextMenu,
-}) => (
-  <div style={{ display: "flex", flexWrap: "wrap", flexGrow: 1 }}>
-    {files.map((file) => (
-      <div
-        key={file.noteId}
-        className={`file-box ${selectedFiles.includes(file.noteId || "") ? "selected" : ""}`}
-        onClick={(event) => {
-          swallow(event);
-          onTileClick(file);
-        }}
-        onContextMenu={(event) => onTileContextMenu(event, file)}
-      >
-        {fileIcon(file.filename)}
-        <TooltipHost content={file.filename}>
-          <p className="file-name">{middleEllipsis(file.filename)}</p>
-        </TooltipHost>
-        <p className="file-size">{formatFileSize(file.filesize)}</p>
-      </div>
-    ))}
-  </div>
-);
 
 export interface SharePointFileGridProps {
   t: Translate;

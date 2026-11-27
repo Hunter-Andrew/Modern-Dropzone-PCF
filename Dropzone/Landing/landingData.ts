@@ -1,30 +1,17 @@
 import { IInputs } from "../generated/ManifestTypes";
 import {
-  getNoteViews,
-  getRelatedNotes,
+  getLocationUrl,
   getSharePointFolderData,
   getSharePointLocations,
 } from "../DataverseActions";
-import { DocumentLocation, FileData, NoteView, SharePointDocument } from "../Interfaces";
-import { getEntityMetadata, isActivityType } from "../utils";
-import { addRegardingFilter } from "./landingHelpers";
+import { DocumentLocation, SharePointDocument } from "../Interfaces";
+import { getEntityMetadata } from "../utils";
 
-// Data loading for Landing: reading notes, note views, SharePoint locations
-// and folders, and the user's saved settings. Nothing here touches React
-// state; Landing calls these and stores the results.
+// Data loading for Landing: SharePoint locations, folders and folder URLs,
+// and the user's saved settings. Nothing here touches React state; Landing
+// calls these and stores the results.
 
 type Context = ComponentFramework.Context<IInputs>;
-
-const NOTE_COLUMNS =
-  "filename,filesize,documentbody,mimetype,annotationid,createdon,subject,notetext";
-
-const EXCLUDED_NOTE_VIEWS = new Set<string>([
-  "Notes Associated View",
-  "Notes",
-  "Notes Advanced Find View",
-  "Notes Lookup View",
-  "Quick Find Annotations",
-]);
 
 /** The location Dynamics creates automatically for a record. */
 export const DEFAULT_LOCATION_NAME = "Documents on Default Site 1";
@@ -34,96 +21,12 @@ const USER_SETTINGS_KEY = "userSettings";
 export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ---------------------------------------------------------------------------
-// Notes
-// ---------------------------------------------------------------------------
-
-export interface NoteViewsResult {
-  views: NoteView[];
-  /** The view to select first: the configured default, else "All Notes", else the first. */
-  defaultViewId?: string;
-}
-
-/**
- * Loads the note views the user can pick from, with "All Notes" first.
- * Returns no views (and logs why) if they can't be loaded.
- */
-export async function loadNoteViews(
-  context: Context,
-  defaultViewName: string,
-): Promise<NoteViewsResult> {
-  try {
-    const res = await getNoteViews(context);
-    if (!res.success) {
-      console.warn(res.message);
-      return { views: [] };
-    }
-
-    let views = res.data.filter((v) => !EXCLUDED_NOTE_VIEWS.has(v.name));
-    const allNotes = views.find((v) => v.name.toLowerCase() === "all notes");
-    if (allNotes) {
-      views = [allNotes, ...views.filter((v) => v !== allNotes)];
-    }
-
-    const findByName = (name: string) =>
-      views.find((v) => v.name.toLowerCase() === name.toLowerCase());
-    const defaultView =
-      (defaultViewName && findByName(defaultViewName)) || findByName("All Notes") || views[0];
-
-    return { views, defaultViewId: defaultView?.savedqueryid };
-  } catch (err) {
-    console.error("Failed to load note views:", err);
-    return { views: [] };
-  }
-}
-
-/**
- * Loads the notes for the current record. With a view, its FetchXML is used
- * with a regarding filter added; without one, all notes for the record.
- */
-export async function loadNotes(context: Context, view?: NoteView): Promise<FileData[]> {
-  let rows: any[] = [];
-
-  if (view) {
-    if (view.fetchxml) {
-      const meta = await getEntityMetadata(context);
-      const recordId = meta?.entityId?.replace(/[{}]/g, "");
-      const fetch = recordId ? addRegardingFilter(view.fetchxml, recordId) : view.fetchxml;
-      const res = await context.webAPI.retrieveMultipleRecords(
-        "annotation",
-        `?fetchXml=${encodeURIComponent(fetch)}&$select=${NOTE_COLUMNS}`,
-      );
-      rows = res.entities;
-    }
-  } else {
-    const res = await getRelatedNotes(context);
-    if (res.success) rows = res.data;
-  }
-
-  return rows.map((r) => ({
-    filename: r.filename,
-    filesize: r.filesize,
-    documentbody: r.documentbody,
-    mimetype: r.mimetype,
-    noteId: r.annotationid,
-    createdon: new Date(r.createdon),
-    subject: r.subject,
-    notetext: r.notetext,
-  }));
-}
-
-// ---------------------------------------------------------------------------
 // SharePoint
 // ---------------------------------------------------------------------------
 
 /** The SharePoint document locations of the current record. */
 export async function loadSharePointLocations(context: Context): Promise<DocumentLocation[]> {
   return getSharePointLocations(context);
-}
-
-/** True when the record has no SharePoint document location yet. */
-export async function hasNoSharePointLocation(context: Context): Promise<boolean> {
-  const locations = await getSharePointLocations(context);
-  return locations.length === 0;
 }
 
 /**
@@ -147,6 +50,19 @@ export async function loadSharePointFolder(
   filterByLocation?: boolean,
 ): Promise<SharePointDocument[]> {
   return getSharePointFolderData(context, folderPath, locationId, locationName, filterByLocation);
+}
+
+/**
+ * The URL of a location's folder in SharePoint, or "" if Dataverse can't
+ * provide it (see currentFolderUrl for the fallback).
+ */
+export async function loadLocationUrl(context: Context, locationId: string): Promise<string> {
+  try {
+    return await getLocationUrl(context, locationId);
+  } catch (err) {
+    console.warn("Getting the SharePoint folder URL failed:", err);
+    return "";
+  }
 }
 
 /**
@@ -175,21 +91,12 @@ export async function waitForSharePointLocation(
 }
 
 // ---------------------------------------------------------------------------
-// Record
-// ---------------------------------------------------------------------------
-
-/** True when the current record is an activity (email, task, ...). */
-export async function isActivityRecord(context: Context): Promise<boolean> {
-  const metadata = await getEntityMetadata(context);
-  return !!metadata && isActivityType(metadata.schemaName);
-}
-
-// ---------------------------------------------------------------------------
 // User settings (browser localStorage)
 // ---------------------------------------------------------------------------
 
 export interface UserSettings {
   tableName?: string;
+  /** The "Remember Location?" toggle. The name dates from the old Notes/SharePoint switch. */
   NotesOrSharePoint?: boolean;
   selectedDocumentLocation?: string | null;
   selectedDocumentLocationName?: string;
@@ -219,14 +126,14 @@ export async function readRememberLocation(context: Context): Promise<boolean | 
 
 export async function saveUserSettings(
   context: Context,
-  notesOrSharePoint: boolean,
+  rememberLocation: boolean,
   selectedDocumentLocation: string | null,
   selectedDocumentLocationName: string,
 ): Promise<void> {
   const metadata = await getEntityMetadata(context);
   const settings: UserSettings = {
     tableName: metadata?.schemaName,
-    NotesOrSharePoint: notesOrSharePoint,
+    NotesOrSharePoint: rememberLocation,
     selectedDocumentLocation,
     selectedDocumentLocationName,
   };

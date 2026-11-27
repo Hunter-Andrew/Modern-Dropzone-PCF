@@ -1,5 +1,4 @@
-import { FileData, SharePointDocument } from "../Interfaces";
-import { escapeXml } from "../utils";
+import { SharePointDocument } from "../Interfaces";
 
 /** Formats a byte count as "1.23 MB", "4.56 KB" or "789 Bytes". */
 export function formatFileSize(sizeInBytes: number): string {
@@ -52,24 +51,6 @@ export function getFileExtension(filename?: string): string {
   return extension ? extension : "txt";
 }
 
-/** Adds an "objectid equals this record" condition to a Notes view's FetchXML. */
-export function addRegardingFilter(fetchXml: string, recordId: string): string {
-  const newCond = `<condition attribute="objectid" operator="eq" value="${escapeXml(recordId)}"/>`;
-
-  if (fetchXml.match(/<filter[^>]*>/i)) {
-    return fetchXml.replace(/(<filter[^>]*>)/i, `$1${newCond}`);
-  }
-  const wrapper = `<filter type="and">${newCond}</filter>`;
-  return fetchXml.replace(/<\/entity>/i, `${wrapper}</entity>`);
-}
-
-/** Notes whose file name contains the search text. */
-export function filterNotes(files: FileData[], searchText: string): FileData[] {
-  return files.filter(
-    (file) => file.filename && file.filename.toLowerCase().includes(searchText.toLowerCase()),
-  );
-}
-
 /** SharePoint items matching the search text, folders first, then by name. */
 export function filterAndSortSharePointItems(
   items: SharePointDocument[],
@@ -85,4 +66,31 @@ export function filterAndSortSharePointItems(
       }
       return a.fullname.toLowerCase().localeCompare(b.fullname.toLowerCase());
     });
+}
+
+/**
+ * The SharePoint URL of the folder being shown, or "" if it can't be worked out.
+ *
+ * The parent of any item's URL is exactly this folder, so that is used when
+ * the folder has items. An empty folder falls back to the location's URL plus
+ * the open subfolder's path.
+ */
+export function currentFolderUrl(
+  locationUrl: string,
+  folderPath: string,
+  items: SharePointDocument[],
+): string {
+  const itemUrl = items.find((item) => item.absoluteurl)?.absoluteurl;
+  if (itemUrl) {
+    return itemUrl.replace(/\/+$/, "").replace(/\/[^/]*$/, "");
+  }
+  if (!locationUrl) return "";
+  const base = locationUrl.replace(/\/+$/, "");
+  if (!folderPath) return base;
+  const path = folderPath
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+  return `${base}/${path}`;
 }
