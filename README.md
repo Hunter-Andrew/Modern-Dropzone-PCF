@@ -77,3 +77,28 @@ For any issues or suggestions, use the "Issues" tab at the top of the page.
 **A:** You can disable drops directly in the edit form menu. Edit the component and set the boolean values for `enableNoteDrops` or `enableSharePointDrops` to `False`. By default, both options are set to `True`, but you can turn them off as needed.
 
 ---
+
+## Building from source
+
+Requires Node.js 18+ and the [Power Platform CLI](https://learn.microsoft.com/en-us/power-platform/developer/cli/introduction) (`pac`). Building the solution package also requires the .NET SDK.
+
+```bash
+npm ci                # install dependencies
+npm run build         # build the control into out/controls (also runs ESLint)
+npm run start:watch   # open the PCF test harness with live reload
+```
+
+To produce an importable solution zip (managed, per `ModernDropzone.cdsproj`):
+
+```bash
+cd Solution/ModernDropzone
+dotnet build -c Release   # output: bin/Release/ModernDropzone.zip
+```
+
+### Versioning
+
+When releasing, bump the version in all three places so Dataverse picks up the update:
+
+- `package.json` → `version`
+- `Dropzone/ControlManifest.Input.xml` → `<control ... version="">`
+- `Solution/ModernDropzone/src/Other/Solution.xml` → `<Version>`
