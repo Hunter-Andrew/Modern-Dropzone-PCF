@@ -95,7 +95,7 @@ export const SharePointLink: React.FC<{ t: Translate; url: string }> = ({ t, url
   // The text is "View files in {0}", so translations can place the link.
   const [before, after = ""] = t(LocalStrings.Link.View_In_SharePoint).split("{0}");
   return (
-    <Text className="sharepoint-link" styles={{ root: { fontSize: "12pt" } }}>
+    <Text className="sharepoint-link" styles={{ root: { fontSize: "18pt" } }}>
       {before}
       <Link href={url} target="_blank" rel="noopener noreferrer">
         {t(LocalStrings.Link.SharePoint)}
