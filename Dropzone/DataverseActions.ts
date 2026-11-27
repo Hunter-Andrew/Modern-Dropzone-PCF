@@ -1,127 +1,48 @@
 import { IInputs } from "./generated/ManifestTypes";
-import { GenericActionResponse, NoteView, NoteViewResult } from "./Interfaces";
-import { errorMessage, escapeXml, getEntityMetadata, isActivityType } from "./utils";
+import { DocumentLocation, SharePointDocument } from "./Interfaces";
+import { escapeXml, getEntityMetadata, isActivityType } from "./utils";
 
-export async function createRelatedNote(
-  context: ComponentFramework.Context<IInputs>,
-  fileName: string,
-  base64: string,
-  fileSize: number,
-  mimeType: string,
-) {
-  const entity = "annotation";
-  const metadata = await getEntityMetadata(context);
-  if (!metadata) {
-    return { success: false, message: "Failed to retrieve entity metadata" };
-  }
-  const objectId = `objectid_${metadata.schemaName}@odata.bind`;
-  const record = {
-    isdocument: true,
-    filename: fileName,
-    subject: fileName,
-    filesize: fileSize,
-    mimetype: mimeType,
-    documentbody: base64.split(",")[1],
-    [objectId]: `/${metadata?.logicalCollectionName}(${metadata.entityId})`,
-  };
-
-  try {
-    const result = await context.webAPI.createRecord(entity, record);
-    return { success: true, message: "Note created successfully", noteId: result.id };
-  } catch (error) {
-    console.error("Error creating note:", error);
-    return { success: false, message: `Error creating note: ${errorMessage(error)}` };
+/**
+ * A failed Dataverse request, carrying the HTTP status and Dataverse's own
+ * error message (from the response body) when there is one.
+ */
+export class DataverseError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "DataverseError";
   }
 }
 
-export async function getRelatedNotes(context: ComponentFramework.Context<IInputs>) {
-  const metadata = await getEntityMetadata(context);
-  if (!metadata) {
-    return { success: false, message: "Failed to retrieve entity metadata", data: [] };
-  }
-  const filter = `_objectid_value eq ${metadata.entityId}`;
-
+/**
+ * Builds a DataverseError from a failed response. Dataverse puts the reason in
+ * the body ({"error": {"message": ...}}); statusText is often empty over HTTP/2.
+ */
+export async function toDataverseError(
+  response: Response,
+  action: string,
+): Promise<DataverseError> {
+  let detail = "";
   try {
-    const result = await context.webAPI.retrieveMultipleRecords(
-      "annotation",
-      `?$filter=${filter}&$orderby=createdon desc`,
-    );
-    const filteredEntities = result.entities.filter(
-      (entity: any) => entity.objecttypecode === metadata.schemaName,
-    );
-    return { success: true, data: filteredEntities };
-  } catch (error) {
-    console.error("Error fetching notes:", error);
-    return { success: false, message: `Error fetching notes: ${errorMessage(error)}`, data: [] };
+    const text = await response.text();
+    try {
+      detail = JSON.parse(text)?.error?.message ?? text;
+    } catch {
+      detail = text;
+    }
+  } catch {
+    // No readable body.
   }
-}
-
-export async function deleteRelatedNote(
-  context: ComponentFramework.Context<IInputs>,
-  noteId: string,
-) {
-  try {
-    await context.webAPI.deleteRecord("annotation", noteId);
-    return { success: true, message: "Note deleted successfully" };
-  } catch (error) {
-    console.error("Error deleting note:", error);
-    return { success: false, message: `Error deleting note: ${errorMessage(error)}` };
-  }
-}
-
-export async function updateRelatedNote(
-  context: ComponentFramework.Context<IInputs>,
-  noteId: string,
-  filename: string,
-): Promise<{ success: boolean; message: string }> {
-  const data = {
-    filename: filename,
-  };
-
-  try {
-    await context.webAPI.updateRecord("annotation", noteId, data);
-    return {
-      success: true,
-      message: "Note updated successfully.",
-    };
-  } catch (error) {
-    console.error("Failed to update note:", error);
-    return {
-      success: false,
-      message: `Error updating note: ${(error as Error).message}`,
-    };
-  }
-}
-
-export async function getNoteViews(
-  context: ComponentFramework.Context<IInputs>,
-): Promise<NoteViewResult> {
-  try {
-    const select = "$select=savedqueryid,name,fetchxml";
-    const filter = "$filter=returnedtypecode eq 'annotation' and fetchxml ne null";
-
-    const res = await context.webAPI.retrieveMultipleRecords("savedquery", `?${select}&${filter}`);
-
-    const views: NoteView[] = res.entities.map((e: any) => ({
-      savedqueryid: e.savedqueryid,
-      name: e.name,
-      fetchxml: e.fetchxml,
-    }));
-
-    return { success: true, data: views };
-  } catch (err) {
-    console.error("Error fetching note views:", err);
-    return {
-      success: false,
-      message: `Error fetching note views: ${errorMessage(err)}`,
-      data: [],
-    };
-  }
+  detail = (detail || response.statusText || "").trim();
+  const message = `${action} (HTTP ${response.status})${detail ? `: ${detail}` : ""}`;
+  return new DataverseError(message, response.status);
 }
 
 export async function getSharePointLocations(
   context: ComponentFramework.Context<IInputs>,
-): Promise<{ name: string; sharepointdocumentlocationid: string }[]> {
+): Promise<DocumentLocation[]> {
   const metadata = await getEntityMetadata(context);
   if (!metadata) {
     return [];
@@ -168,7 +89,7 @@ export async function getSharePointLocations(
   });
 
   if (!response.ok) {
-    throw new Error(`Error fetching SharePoint document locations: ${response.statusText}`);
+    throw await toDataverseError(response, "Error fetching SharePoint document locations");
   }
   let data = await response.json();
   return data.value.map((item: any) => ({
@@ -177,123 +98,32 @@ export async function getSharePointLocations(
     parentsiteid: item._parentsiteorlocation_value,
   }));
 }
-export async function getSharePointData(
+/**
+ * The absolute URL of a document location's folder in SharePoint, e.g.
+ * https://contoso.sharepoint.com/sites/crm/account/Contoso_1234.
+ */
+export async function getLocationUrl(
   context: ComponentFramework.Context<IInputs>,
-  selectedDocumentLocation?: string,
-  folderPath?: string,
-  selectedDocumentLocationName?: string,
-): Promise<any[]> {
+  locationId: string,
+): Promise<string> {
   const metadata = await getEntityMetadata(context);
   if (!metadata) {
-    return [];
+    return "";
   }
-  const isActivity = isActivityType(metadata.schemaName);
-  let filters = "";
-  let folderFilter = "";
-  if (folderPath) {
-    folderFilter = `
-      <filter type="and">
-        <condition attribute="relativelocation" operator="eq" value="${escapeXml(folderPath)}"/>
-      </filter>`;
-  }
-  filters = `
-      <filter type="and">
-         <filter type="and">
-            <condition attribute="locationid" operator="eq" value="${escapeXml(selectedDocumentLocation)}" />
-         </filter>
-         <filter type="and">
-            <condition attribute="locationname" operator="eq" value="${escapeXml(selectedDocumentLocationName)}" />
-         </filter>
-         <filter type="and">
-            <condition attribute="servicetype" operator="eq" value="0" />
-         </filter>
-         ${folderFilter}
-      </filter>`;
-
-  const fetchXml = `
-    <fetch distinct="false" mapping="logical" returntotalrecordcount="true" no-lock="false">
-      <entity name="sharepointdocument">
-        <attribute name="documentid"/>
-        <attribute name="fullname"/>
-        <attribute name="relativelocation"/>
-        <attribute name="sharepointcreatedon"/>
-        <attribute name="ischeckedout"/>
-        <attribute name="filetype"/>
-        <attribute name="modified"/>
-        <attribute name="sharepointmodifiedby"/>
-        <attribute name="servicetype"/>
-        <attribute name="absoluteurl"/>
-        <attribute name="title"/>
-        <attribute name="author"/>
-        <attribute name="sharepointdocumentid"/>
-        <attribute name="readurl"/>
-        <attribute name="editurl"/>
-        <attribute name="locationid"/>
-        <attribute name="iconclassname"/>
-        <attribute name="locationname"/>
-        <attribute name="filesize"/>
-        ${filters}
-        <order attribute="relativelocation" descending="false"/>
-        <filter>
-          <condition attribute="isrecursivefetch" operator="eq" value="0"/>
-        </filter>
-        <link-entity name="${metadata.schemaName}" from="${isActivity ? "activity" : metadata.schemaName}id" to="regardingobjectid" alias="bb">
-          <filter type="and">
-            <condition attribute="${isActivity ? "activity" : metadata.schemaName}id" operator="eq" uitype="${isActivity ? "activity" : metadata.schemaName}" value="${escapeXml(metadata.entityId)}"/>
-          </filter>
-        </link-entity>
-      </entity>
-    </fetch>
-  `;
-
-  const encodedFetchXml = encodeURIComponent(fetchXml);
-  const url = `${metadata.clientUrl}/api/data/v9.0/sharepointdocuments?fetchXml=${encodedFetchXml}`;
-
-  const headers = {
-    Accept: "application/json",
-    "OData-MaxVersion": "4.0",
-    "OData-Version": "4.0",
-    Prefer: "odata.include-annotations=OData.Community.Display.V1.FormattedValue",
-  };
-
+  const id = locationId.replace(/[{}]/g, "");
+  const url = `${metadata.clientUrl}/api/data/v9.0/sharepointdocumentlocations(${id})/Microsoft.Dynamics.CRM.RetrieveAbsoluteAndSiteCollectionUrl()`;
   const response = await fetch(url, {
-    method: "GET",
-    headers: headers,
+    headers: {
+      Accept: "application/json",
+      "OData-MaxVersion": "4.0",
+      "OData-Version": "4.0",
+    },
   });
-
   if (!response.ok) {
-    throw new Error(`Error fetching SharePoint data: ${response.statusText}`);
+    throw await toDataverseError(response, "Error getting the SharePoint folder URL");
   }
-
   const data = await response.json();
-
-  return data.value.map((item: any) => ({
-    readurl: item.readurl,
-    modified: item.modified,
-    modifiedFormatted: item["modified@OData.Community.Display.V1.FormattedValue"],
-    sharepointmodifiedby: item.sharepointmodifiedby,
-    editurl: item.editurl,
-    sharepointdocumentid: item.sharepointdocumentid,
-    documentid: item.documentid,
-    documentidFormatted: item["documentid@OData.Community.Display.V1.FormattedValue"],
-    ischeckedout: item.ischeckedout,
-    ischeckedoutFormatted: item["ischeckedout@OData.Community.Display.V1.FormattedValue"],
-    sharepointcreatedon: item.sharepointcreatedon,
-    sharepointcreatedonFormatted:
-      item["sharepointcreatedon@OData.Community.Display.V1.FormattedValue"],
-    locationname: item.locationname,
-    iconclassname: item.iconclassname,
-    absoluteurl: item.absoluteurl,
-    fullname: item.fullname,
-    locationid: item.locationid,
-    title: item.title,
-    filetype: item.filetype,
-    relativelocation: item.relativelocation,
-    servicetypeFormatted: item["servicetype@OData.Community.Display.V1.FormattedValue"],
-    servicetype: item.servicetype,
-    author: item.author,
-    filesize: item.filesize,
-  }));
+  return data.AbsoluteUrl ?? "";
 }
 
 export async function getSharePointFolderData(
@@ -302,7 +132,7 @@ export async function getSharePointFolderData(
   selectedDocumentLocation?: string | null,
   selectedDocumentLocationName?: string,
   defaultSite?: boolean,
-): Promise<any[]> {
+): Promise<SharePointDocument[]> {
   const metadata = await getEntityMetadata(context);
   if (!metadata) {
     return [];
@@ -387,7 +217,7 @@ ${filters}
   });
 
   if (!response.ok) {
-    throw new Error(`Error fetching SharePoint data: ${response.statusText}`);
+    throw await toDataverseError(response, "Error fetching SharePoint data");
   }
 
   const data = await response.json();
@@ -445,7 +275,7 @@ async function getSiteUrl(
   try {
     const response = await fetch(url, fetchOptions);
     if (!response.ok) {
-      throw new Error("Error getting SharePoint site: " + response.statusText);
+      throw await toDataverseError(response, "Error getting SharePoint site");
     }
     const responseData = await response.json();
     if (!responseData.SiteAndLocationUrl) {
@@ -496,7 +326,7 @@ export async function createSharePointLocation(
   try {
     const response = await fetch(url, fetchOptions);
     if (!response.ok) {
-      throw new Error("Failed to create a location: " + response.statusText);
+      throw await toDataverseError(response, "Failed to create a location");
     }
     const responseData = await response.json();
     if (!responseData.LocationId) {
@@ -549,7 +379,7 @@ export async function createSharePointDocument(
   try {
     const response = await fetch(url, fetchOptions);
     if (!response.ok) {
-      throw new Error("Failed to upload document: " + response.statusText);
+      throw await toDataverseError(response, "Failed to upload document");
     }
   } catch (error) {
     console.error("Error uploading document:", error);
@@ -602,7 +432,7 @@ export async function deleteSharePointDocument(
   try {
     const response = await fetch(url, fetchOptions);
     if (!response.ok) {
-      throw new Error("Failed to delete document: " + response.statusText);
+      throw await toDataverseError(response, "Failed to delete document");
     }
   } catch (error) {
     console.error("Error deleting document:", error);
@@ -651,48 +481,10 @@ export async function createSharePointFolder(
   try {
     const response = await fetch(url, fetchOptions);
     if (!response.ok) {
-      throw new Error("Failed to create a folder: " + response.statusText);
+      throw await toDataverseError(response, "Failed to create a folder");
     }
   } catch (error) {
     console.error("Error creating a folder:", error);
     throw error;
-  }
-}
-
-export async function createActivityAttachment(
-  context: ComponentFramework.Context<IInputs>,
-  fileName: string,
-  base64: string,
-  mimeType: string,
-): Promise<GenericActionResponse> {
-  const metadata = await getEntityMetadata(context);
-  if (!metadata) {
-    return {
-      success: false,
-      message: `Unable to find entity metadata to create an activity document`,
-    };
-  }
-  const entity = "activitymimeattachment";
-  const objectId = `objectid_${metadata.schemaName}@odata.bind`;
-  const record = {
-    filename: fileName,
-    mimetype: mimeType,
-    body: base64.split(",")[1],
-    [objectId]: `/${metadata?.logicalCollectionName}(${metadata.entityId})`,
-    objecttypecode: metadata.schemaName,
-  };
-
-  try {
-    await context.webAPI.createRecord(entity, record);
-    return {
-      success: true,
-      message: `${fileName} added to ${metadata.schemaName} attachments successfully`,
-    };
-  } catch (error) {
-    console.error("Error adding SharePoint document to activity:", error);
-    return {
-      success: false,
-      message: `Error adding SharePoint document to activity: ${errorMessage(error)}`,
-    };
   }
 }

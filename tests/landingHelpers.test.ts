@@ -1,12 +1,11 @@
 import {
-  addRegardingFilter,
+  currentFolderUrl,
   filterAndSortSharePointItems,
-  filterNotes,
   formatFileSize,
   getFileExtension,
   middleEllipsis,
 } from "../Dropzone/Landing/landingHelpers";
-import { FileData, SharePointDocument } from "../Dropzone/Interfaces";
+import { SharePointDocument } from "../Dropzone/Interfaces";
 
 describe("formatFileSize", () => {
   it.each([
@@ -48,48 +47,6 @@ describe("getFileExtension", () => {
   });
 });
 
-describe("addRegardingFilter", () => {
-  const id = "11111111-2222-3333-4444-555555555555";
-  const condition = `<condition attribute="objectid" operator="eq" value="${id}"/>`;
-
-  it("adds the condition to the view's first filter", () => {
-    const fetch =
-      '<fetch><entity name="annotation"><filter type="and"><condition attribute="ownerid" operator="eq-userid"/></filter></entity></fetch>';
-    expect(addRegardingFilter(fetch, id)).toBe(
-      `<fetch><entity name="annotation"><filter type="and">${condition}<condition attribute="ownerid" operator="eq-userid"/></filter></entity></fetch>`,
-    );
-  });
-
-  it("adds a filter when the view has none", () => {
-    const fetch = '<fetch><entity name="annotation"><attribute name="filename"/></entity></fetch>';
-    expect(addRegardingFilter(fetch, id)).toBe(
-      `<fetch><entity name="annotation"><attribute name="filename"/><filter type="and">${condition}</filter></entity></fetch>`,
-    );
-  });
-
-  it("escapes the record id", () => {
-    expect(addRegardingFilter("<fetch><entity></entity></fetch>", 'a"b')).toContain(
-      'value="a&quot;b"',
-    );
-  });
-});
-
-const note = (filename: string): FileData => ({ filename, filesize: 1, createdon: new Date(0) });
-
-describe("filterNotes", () => {
-  it("matches the file name case-insensitively", () => {
-    const notes = [note("Budget.xlsx"), note("photo.png"), note("budget-2.pdf")];
-    expect(filterNotes(notes, "BUDGET").map((n) => n.filename)).toEqual([
-      "Budget.xlsx",
-      "budget-2.pdf",
-    ]);
-  });
-
-  it("returns everything for an empty search", () => {
-    expect(filterNotes([note("a"), note("b")], "")).toHaveLength(2);
-  });
-});
-
 const spItem = (fullname: string, filetype: string) =>
   ({ fullname, filetype, sharepointdocumentid: fullname }) as SharePointDocument;
 
@@ -120,5 +77,34 @@ describe("filterAndSortSharePointItems", () => {
     const items = [spItem("b", "pdf"), spItem("a", "pdf")];
     filterAndSortSharePointItems(items, "");
     expect(items.map((i) => i.fullname)).toEqual(["b", "a"]);
+  });
+});
+
+describe("currentFolderUrl", () => {
+  const location = "https://contoso.sharepoint.com/sites/crm/account/Contoso_1234";
+  const withUrl = (absoluteurl: string) => ({ absoluteurl }) as SharePointDocument;
+
+  it("uses the parent of an item's URL when the folder has items", () => {
+    const items = [withUrl(`${location}/Invoices%20%26%20Receipts/march.pdf`)];
+    expect(currentFolderUrl("", "Invoices & Receipts", items)).toBe(
+      `${location}/Invoices%20%26%20Receipts`,
+    );
+    // A folder item's parent is the folder being shown too.
+    expect(currentFolderUrl(location, "", [withUrl(`${location}/Contracts`)])).toBe(location);
+  });
+
+  it("uses the location URL for an empty top folder", () => {
+    expect(currentFolderUrl(`${location}/`, "", [])).toBe(location);
+  });
+
+  it("adds the subfolder path, encoded, for an empty subfolder", () => {
+    expect(currentFolderUrl(location, "Invoices & Receipts/2024", [])).toBe(
+      `${location}/Invoices%20%26%20Receipts/2024`,
+    );
+  });
+
+  it('returns "" when nothing is known', () => {
+    expect(currentFolderUrl("", "", [])).toBe("");
+    expect(currentFolderUrl("", "", [withUrl("")])).toBe("");
   });
 });

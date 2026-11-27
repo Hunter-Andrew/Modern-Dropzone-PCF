@@ -108,18 +108,6 @@ export function isValidSharePointFolderName(name: string): boolean {
   );
 }
 
-export function isPDF(mime: string) {
-  return mime === "application/pdf";
-}
-
-export function isImage(mime: string) {
-  return mime.startsWith("image/");
-}
-
-export function createDataUri(mimetype: string, base64: string): string {
-  return `data:${mimetype};base64,${base64}`;
-}
-
 export function isActivityType(schemaName: string): schemaName is ActivityType {
   return [
     "email",
@@ -149,22 +137,10 @@ export type Translate = (key: LocalizationKey) => string;
 export const getLocalString = (context: Context, key: LocalizationKey): string =>
   context.resources.getString(key);
 
-export function b64toBlob(b64Data: string, contentType = "", sliceSize = 512) {
-  if (b64Data.startsWith("data:application/pdf;base64,")) {
-    b64Data = b64Data.replace("data:application/pdf;base64,", "");
-  }
-
-  const byteCharacters = atob(b64Data);
-  const byteArrays = [];
-
-  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-    const slice = byteCharacters.slice(offset, offset + sliceSize);
-    const byteNumbers = new Array(slice.length);
-    for (let i = 0; i < slice.length; i++) {
-      byteNumbers[i] = slice.charCodeAt(i);
-    }
-    byteArrays.push(new Uint8Array(byteNumbers));
-  }
-
-  return new Blob(byteArrays, { type: contentType });
+/** Replaces {0}, {1}, ... in a localized string with the given values. */
+export function formatString(template: string, ...values: (string | number)[]): string {
+  return template.replace(/\{(\d+)\}/g, (match: string, index: string) => {
+    const i = Number(index);
+    return i < values.length ? String(values[i]) : match;
+  });
 }

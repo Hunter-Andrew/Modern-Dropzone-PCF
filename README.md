@@ -8,11 +8,9 @@ The component supports SharePoint Document Locations and comes pre-configured to
 
 ### Steps to Install:
 
-1. **Enable Notes**
-   
-   To utilize this component with notes, make sure that notes are enabled for your entities.
-   
-   ![Modern Dropzone Setup](https://github.com/GorgonUK/DropzonePCF/assets/59618079/652bdb3c-1e1f-45f4-95a9-e61cb6b2873e)
+1. **Set up SharePoint document management**
+
+   The control shows and uploads the SharePoint documents of the record it's on, so SharePoint document management must be enabled for the table (see the guide above). Nothing else needs configuring: the control finds the record's document locations and its SharePoint folder by itself.
 
 2. **Install the Solution**
 
@@ -40,31 +38,28 @@ The component supports SharePoint Document Locations and comes pre-configured to
 
    ![Dropzone Component on Form](https://github.com/GorgonUK/Modern-Dropzone-PCF/assets/59618079/e9461aa3-fb3f-4170-a71c-7a96ef1ca421)
 
-6. **Configure the component**
+6. **Configure the component (optional)**
 
-   Under "Enable SharePoint Documents?" type either Yes/No in the "static value" text input (If "No" then the SharePoint toggle is hidden):
-   
-   ![image](https://github.com/user-attachments/assets/fbcc9406-290e-4567-a677-63ede05a4bc6)
+   | Setting | Default | What it does |
+   | --- | --- | --- |
+   | Allow uploads? | Yes | Lets users upload files by dropping them on the control or browsing for them. |
+   | Show document location picker? | Yes | Shows the picker for switching between the record's SharePoint document locations, with options to add a location and to remember the selected one. |
+
+   To make the control read-only, disable it on the form; that also hides Delete and Create Folder.
+
+### Upload size
+
+Uploads go through Dataverse (the same `UploadDocument` call the out-of-the-box Documents grid uses), which sends the whole file in a single request. Microsoft doesn't document a limit for it; community reports put it at about 50 MB, and there's no known setting to raise it. When an upload fails because the file is too large, the control says so and links to the record's folder in SharePoint, where files of any size up to SharePoint's own limit can be uploaded directly.
 
 For any issues or suggestions, use the "Issues" tab at the top of the page.
 
 ## Q: Why can’t my users see files in the drop zone?  
-**A:** Make sure users have `Read` access to the Notes (Annotation) table. Files uploaded via the drop zone are stored there.
+**A:** The files live in SharePoint. Users need access to the record, read access to the Document Location table in Dataverse, and access to the folder in SharePoint.
 
 ---
 
-## Q: System Administrators can see the files. Why not everyone else?  
-**A:** System Administrators have access to all records by default. Other users need proper permissions for both the parent table (Requests) and Notes.
-
----
-
-## Q: Do drop zone files follow the same permissions as the parent record?  
-**A:** Yes, files inherit permissions from the parent record. Ensure the parent record’s access is configured correctly.
-
----
-
-## Q: How can I check if the files are properly saved?  
-**A:** Enable auditing on the Notes (Annotation) table to verify file creation and association.
+## Q: Why does the drop zone ask me to create the record first?  
+**A:** A record gets its SharePoint folder once it exists. After the first save, the control checks for the folder for about 20 seconds and shows it when it appears.
 
 ---
 
@@ -73,8 +68,8 @@ For any issues or suggestions, use the "Issues" tab at the top of the page.
 
 ---
 
-## Q: How can I disable the drop zone for notes or SharePoint?  
-**A:** You can disable drops directly in the edit form menu. Edit the component and set the boolean values for `enableNoteDrops` or `enableSharePointDrops` to `False`. By default, both options are set to `True`, but you can turn them off as needed.
+## Q: How can I turn off uploads?  
+**A:** Edit the component on the form and set **Allow uploads?** to `No`. Users can still browse, open and delete files; disable the control on the form to make it fully read-only.
 
 ---
 

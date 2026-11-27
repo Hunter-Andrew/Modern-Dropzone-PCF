@@ -67,7 +67,7 @@
 		<value>Modern Dropzone</value>
 	</data>
 	<data name="App__Description" xml:space="preserve">
-		<value>Modern Dropzone component for Dynamics365 that integrates with Notes and SharePoint OOTB</value>
+		<value>Modern Dropzone component for Dynamics 365 that shows and uploads a record&apos;s SharePoint documents</value>
 	</data>
 
 
@@ -82,15 +82,6 @@
 	</data>
 
 
-	<data name="Button__Label_Preview" xml:space="preserve">
-		<value>Preview</value>
-	</data>
-	<data name="Button__Label_Rename" xml:space="preserve">
-		<value>Rename</value>
-	</data>
-	<data name="Button__Label_Download" xml:space="preserve">
-		<value>Download</value>
-	</data>
 	<data name="Button__Label_Delete" xml:space="preserve">
 		<value>Delete</value>
 	</data>
@@ -136,18 +127,6 @@
 		<value>Are you sure you want to delete folder</value>
 	</data>
 
-	<data name="Dialog__Title_Edit_File" xml:space="preserve">
-		<value>Edit file name</value>
-	</data>
-	<data name="Dialog__Description_Edit_File" xml:space="preserve">
-		<value>File name</value>
-	</data>
-	<data name="Dialog__Button_Save_Edit_File" xml:space="preserve">
-		<value>Save</value>
-	</data>
-	<data name="Dialog__Button_Cancel_Edit_File" xml:space="preserve">
-		<value>Cancel</value>
-	</data>
 
 
 	<data name="Dialog__Title_AddLocation" xml:space="preserve">
@@ -180,29 +159,8 @@
 	</data>
 
 
-	<data name="Toggle__Label_SharePointDocuments" xml:space="preserve">
-		<value>SharePoint Documents</value>
-	</data>
-	<data name="Toggle__Value_On_SharePointDocuments" xml:space="preserve">
-		<value>On</value>
-	</data>
-	<data name="Toggle__Value_Off_SharePointDocuments" xml:space="preserve">
-		<value>Off</value>
-	</data>
 
 
-	<data name="Toast__Message_Uploading_Notes" xml:space="preserve">
-		<value>Uploading file...</value>
-	</data>
-	<data name="Toast__Message_Upload_Success_Notes" xml:space="preserve">
-		<value>uploaded successfully!</value>
-	</data>
-	<data name="Toast__Message_Upload_Error_Notes" xml:space="preserve">
-		<value>Error uploading file</value>
-	</data>
-	<data name="Toast__Message_Read_Error_Notes" xml:space="preserve">
-		<value>Error reading file</value>
-	</data>
 
 
 	<data name="Toast__Message_Uploading_SharePoint" xml:space="preserve">
@@ -221,14 +179,8 @@
 		<value>Error reading file</value>
 	</data>
 
-	<data name="Toast__Message_Download_Error_Notes" xml:space="preserve">
-		<value>Missing file data for download</value>
-	</data>
-	<data name="Toast__Message_Download_Prepare_Error_Notes" xml:space="preserve">
-		<value>Preparing download...</value>
-	</data>
 	<data name="Toast__Message_Download_Error_SharePoint" xml:space="preserve">
-		<value>Missing URL for SharePoint file download</value>
+		<value>This file has no SharePoint link to open</value>
 	</data>
 	<data name="Toast__Message_Download_Open_Error_SharePoint" xml:space="preserve">
 		<value>Failed to open file</value>
@@ -236,9 +188,6 @@
 
 	<data name="Toast__Message_Delete_Error_File_Not_Found_SharePoint" xml:space="preserve">
 		<value>SharePoint document not found.</value>
-	</data>
-	<data name="Toast__Message_Delete_Error_SharePoint" xml:space="preserve">
-		<value>SharePoint document successfully deleted!</value>
 	</data>
 
 	<data name="Toast__Message_Delete_Loading" xml:space="preserve">
@@ -251,15 +200,6 @@
 		<value>Failed to delete file</value>
 	</data>
 
-	<data name="Toast__Message_Save_Loading" xml:space="preserve">
-		<value>Saving changes...</value>
-	</data>
-	<data name="Toast__Message_Save_Success" xml:space="preserve">
-		<value>Changes saved successfully!</value>
-	</data>
-	<data name="Toast__Message_Save_Error" xml:space="preserve">
-		<value>Failed to save changes</value>
-	</data>
 
 	<data name="Toast__Message_Create_Folder_Empty_Error" xml:space="preserve">
 		<value>Folder name cannot be empty</value>
@@ -275,5 +215,23 @@
 	</data>
 	<data name="Toast__Message_Create_Folder_Invalid_Name_Error" xml:space="preserve">
 		<value>Folder names can't contain " * : &lt; &gt; ? / \ | or start or end with a space or period</value>
+	</data>
+	<data name="Button__Label_Open" xml:space="preserve">
+		<value>Open</value>
+	</data>
+	<data name="Link__View_In_SharePoint" xml:space="preserve">
+		<value>View files in {0}</value>
+	</data>
+	<data name="Link__SharePoint" xml:space="preserve">
+		<value>SharePoint</value>
+	</data>
+	<data name="Toast__Message_Upload_Too_Large" xml:space="preserve">
+		<value>{0} ({1}) is too large to upload here.</value>
+	</data>
+	<data name="Toast__Message_Upload_Too_Large_Hint" xml:space="preserve">
+		<value>Upload it in {0} instead.</value>
+	</data>
+	<data name="Toast__Message_Read_Error_Large" xml:space="preserve">
+		<value>{0} ({1}) could not be read. It may be too large to upload here.</value>
 	</data>
 </root>

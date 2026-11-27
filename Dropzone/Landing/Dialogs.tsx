@@ -8,108 +8,20 @@ import {
   IComboBox,
   IComboBoxOption,
   Label,
-  Modal,
   PrimaryButton,
   Stack,
   TextField,
 } from "@fluentui/react";
 import { LocalStrings } from "../consts/LocalStrings";
-import { PreviewFile } from "../Interfaces";
 import { Translate } from "../utils";
 
-// Dialogs and the PDF preview used by Landing. Each one is controlled: Landing
+// Dialogs used by Landing. Each one is controlled: Landing
 // owns the state and passes values and callbacks in.
 
 type TextChangeHandler = (
   event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>,
   newValue?: string,
 ) => void;
-
-export interface PdfPreviewModalProps {
-  file: PreviewFile;
-  onClose: () => void;
-}
-
-/** In-page PDF preview. Large PDFs are opened in a new tab instead (see Landing.openDialog). */
-export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({ file, onClose }) => (
-  <Modal
-    isOpen
-    onDismiss={onClose}
-    isBlocking={false}
-    containerClassName="ms-modalExample-container"
-    styles={{
-      main: {
-        width: "100%",
-        height: "100%",
-        "@media(max-width: 767px)": { width: "100%" },
-      },
-      scrollableContent: {
-        height: "100%",
-        overflow: "hidden",
-      },
-    }}
-  >
-    <div className={"scrollable-area"}>
-      <object
-        data={file.documentbody.replace(/(data:application\/pdf;base64,).*?\1/, "$1")}
-        type="application/pdf"
-        width="100%"
-        height="100%"
-      >
-        <p>
-          Your browser does not support PDFs. <a href={file.documentbody}>Download the PDF</a>.
-        </p>
-      </object>
-    </div>
-
-    <DialogFooter
-      styles={{
-        actionsRight: {
-          marginTop: "-6px",
-          marginRight: "9px",
-          marginBottom: "0px",
-        },
-      }}
-    >
-      <DefaultButton onClick={onClose} text="Close" />
-    </DialogFooter>
-  </Modal>
-);
-
-export interface RenameNoteDialogProps {
-  t: Translate;
-  filename: string;
-  onChange: (filename: string) => void;
-  onSave: () => void;
-  onCancel: () => void;
-}
-
-export const RenameNoteDialog: React.FC<RenameNoteDialogProps> = ({
-  t,
-  filename,
-  onChange,
-  onSave,
-  onCancel,
-}) => (
-  <Dialog
-    hidden={false}
-    onDismiss={onCancel}
-    dialogContentProps={{
-      type: DialogType.normal,
-      title: t(LocalStrings.Dialog.EditFile.Title),
-    }}
-  >
-    <TextField
-      label={t(LocalStrings.Dialog.EditFile.Description)}
-      value={filename}
-      onChange={(_, newValue) => onChange(newValue || "")}
-    />
-    <DialogFooter>
-      <PrimaryButton onClick={onSave} text={t(LocalStrings.Dialog.EditFile.Button_Save)} />
-      <DefaultButton onClick={onCancel} text={t(LocalStrings.Dialog.EditFile.Button_Cancel)} />
-    </DialogFooter>
-  </Dialog>
-);
 
 export interface CreateFolderDialogProps {
   t: Translate;

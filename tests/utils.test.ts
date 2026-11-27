@@ -1,12 +1,10 @@
 import {
-  createDataUri,
   errorMessage,
   escapeXml,
+  formatString,
   getControlValue,
   getRecordId,
   isActivityType,
-  isImage,
-  isPDF,
   isValidSharePointFolderName,
 } from "../Dropzone/utils";
 import { mockContext, RECORD_ID } from "./mockContext";
@@ -50,24 +48,22 @@ describe("isValidSharePointFolderName", () => {
   });
 });
 
-describe("file type checks", () => {
-  it("isPDF", () => {
-    expect(isPDF("application/pdf")).toBe(true);
-    expect(isPDF("image/png")).toBe(false);
-  });
-
-  it("isImage", () => {
-    expect(isImage("image/png")).toBe(true);
-    expect(isImage("application/pdf")).toBe(false);
-  });
-
-  it("createDataUri", () => {
-    expect(createDataUri("image/png", "AAA")).toBe("data:image/png;base64,AAA");
-  });
-
-  it("isActivityType", () => {
+describe("isActivityType", () => {
+  it("recognises activity tables", () => {
     expect(isActivityType("email")).toBe(true);
     expect(isActivityType("account")).toBe(false);
+  });
+});
+
+describe("formatString", () => {
+  it("fills in numbered placeholders", () => {
+    expect(formatString("{0} ({1}) is too large", "big.zip", "80.00 MB")).toBe(
+      "big.zip (80.00 MB) is too large",
+    );
+  });
+
+  it("leaves placeholders without a value", () => {
+    expect(formatString("View files in {0}")).toBe("View files in {0}");
   });
 });
 
@@ -84,9 +80,9 @@ describe("getRecordId", () => {
 
 describe("getControlValue", () => {
   it("returns the property's value, or an empty string when unset", () => {
-    const { context } = mockContext({ parameters: { allowNoteDrops: true } });
-    expect(getControlValue(context, "allowNoteDrops")).toBe(true);
-    expect(getControlValue(context, "allowSharePointDrops")).toBe("");
+    const { context } = mockContext({ parameters: { allowSharePointDrops: true } });
+    expect(getControlValue(context, "allowSharePointDrops")).toBe(true);
+    expect(getControlValue(context, "displaySharePointDocumentLocationsControl")).toBe("");
   });
 });
 

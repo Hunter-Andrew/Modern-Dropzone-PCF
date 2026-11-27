@@ -1,15 +1,12 @@
 import {
-  isActivityRecord,
-  loadNotes,
-  loadNoteViews,
+  loadLocationUrl,
   readRememberLocation,
   readUserSettings,
   saveUserSettings,
   shouldFilterByLocation,
   waitForSharePointLocation,
 } from "../Dropzone/Landing/landingData";
-import { NoteView } from "../Dropzone/Interfaces";
-import { mockContext, mockFetch, RECORD_ID } from "./mockContext";
+import { mockContext, mockFetch } from "./mockContext";
 
 beforeEach(() => {
   localStorage.clear();
@@ -21,91 +18,6 @@ beforeEach(() => {
 afterEach(() => {
   jest.restoreAllMocks();
   jest.useRealTimers();
-});
-
-const view = (name: string, fetchxml = "<fetch><entity></entity></fetch>"): NoteView => ({
-  savedqueryid: `id-${name}`,
-  name,
-  fetchxml,
-});
-
-describe("loadNoteViews", () => {
-  const views = [
-    view("My Notes"),
-    view("Notes Associated View"),
-    view("All Notes"),
-    view("Quick Find Annotations"),
-  ];
-
-  it("hides the system views and puts All Notes first", async () => {
-    const { context } = mockContext({ records: { savedquery: views } });
-    const result = await loadNoteViews(context, "");
-    expect(result.views.map((v) => v.name)).toEqual(["All Notes", "My Notes"]);
-    expect(result.defaultViewId).toBe("id-All Notes");
-  });
-
-  it("selects the configured default view, ignoring case", async () => {
-    const { context } = mockContext({ records: { savedquery: views } });
-    expect((await loadNoteViews(context, "my notes")).defaultViewId).toBe("id-My Notes");
-  });
-
-  it("falls back to All Notes when the configured view doesn't exist", async () => {
-    const { context } = mockContext({ records: { savedquery: views } });
-    expect((await loadNoteViews(context, "Missing")).defaultViewId).toBe("id-All Notes");
-  });
-
-  it("returns no views when loading fails", async () => {
-    const { context, retrieveMultipleRecords } = mockContext();
-    retrieveMultipleRecords.mockRejectedValueOnce(new Error("offline"));
-    expect(await loadNoteViews(context, "")).toEqual({ views: [] });
-  });
-});
-
-describe("loadNotes", () => {
-  const row = {
-    annotationid: "n1",
-    filename: "a.pdf",
-    filesize: 10,
-    documentbody: "AAA",
-    mimetype: "application/pdf",
-    createdon: "2025-01-02T00:00:00Z",
-    subject: "s",
-    notetext: "t",
-    objecttypecode: "account",
-  };
-
-  it("queries the view's FetchXML with the record filter added", async () => {
-    const { context, retrieveMultipleRecords } = mockContext({ records: { annotation: [row] } });
-    const notes = await loadNotes(context, view("All Notes"));
-
-    const query = decodeURIComponent(retrieveMultipleRecords.mock.calls[0][1] as string);
-    expect(query).toContain(`<condition attribute="objectid" operator="eq" value="${RECORD_ID}"/>`);
-    expect(query).toContain("$select=filename,filesize,documentbody,mimetype,annotationid");
-    expect(notes).toEqual([
-      {
-        noteId: "n1",
-        filename: "a.pdf",
-        filesize: 10,
-        documentbody: "AAA",
-        mimetype: "application/pdf",
-        createdon: new Date("2025-01-02T00:00:00Z"),
-        subject: "s",
-        notetext: "t",
-      },
-    ]);
-  });
-
-  it("returns no notes for a view without FetchXML", async () => {
-    const { context, retrieveMultipleRecords } = mockContext({ records: { annotation: [row] } });
-    expect(await loadNotes(context, view("Empty", ""))).toEqual([]);
-    expect(retrieveMultipleRecords).not.toHaveBeenCalled();
-  });
-
-  it("without a view, loads the record's notes of the record's table", async () => {
-    const other = { ...row, annotationid: "n2", objecttypecode: "contact" };
-    const { context } = mockContext({ records: { annotation: [row, other] } });
-    expect((await loadNotes(context)).map((n) => n.noteId)).toEqual(["n1"]);
-  });
 });
 
 describe("shouldFilterByLocation", () => {
@@ -164,15 +76,29 @@ describe("waitForSharePointLocation", () => {
   });
 });
 
-describe("isActivityRecord", () => {
-  it("is true for activity tables", async () => {
-    mockFetch({ schemaName: "Email" });
-    expect(await isActivityRecord(mockContext().context)).toBe(true);
+describe("loadLocationUrl", () => {
+  it("asks Dataverse for the location's folder URL", async () => {
+    const url = "https://contoso.sharepoint.com/sites/crm/account/Contoso_1234";
+    const fetchMock = mockFetch({ locationUrl: url });
+    expect(await loadLocationUrl(mockContext().context, "{LOC-1}")).toBe(url);
+    expect(fetchMock.mock.calls.map((call) => call[0])).toContain(
+      "https://org.example/api/data/v9.0/sharepointdocumentlocations(LOC-1)/Microsoft.Dynamics.CRM.RetrieveAbsoluteAndSiteCollectionUrl()",
+    );
   });
 
-  it("is false for other tables", async () => {
-    mockFetch({ schemaName: "Account" });
-    expect(await isActivityRecord(mockContext().context)).toBe(false);
+  it('returns "" when the lookup fails', async () => {
+    mockFetch();
+    const failing = jest.fn(async (url: string) =>
+      url.includes("EntityDefinitions")
+        ? ({
+            ok: true,
+            status: 200,
+            json: async () => ({ SchemaName: "Account", LogicalCollectionName: "accounts" }),
+          } as Response)
+        : ({ ok: false, status: 404, statusText: "", text: async () => "" } as Response),
+    );
+    global.fetch = failing as unknown as typeof fetch;
+    expect(await loadLocationUrl(mockContext().context, "loc1")).toBe("");
   });
 });
 

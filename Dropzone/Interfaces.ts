@@ -1,15 +1,3 @@
-export interface FileData {
-  subject?: string;
-  notetext?: string;
-  filename: string;
-  filesize: number;
-  documentbody?: string;
-  mimetype?: string;
-  noteId?: string;
-  createdon: Date;
-  isLoading?: boolean;
-  isEditing?: boolean;
-}
 export interface SharePointDocument {
   readurl: string;
   modified: string;
@@ -38,12 +26,6 @@ export interface SharePointDocument {
   filename?: string;
 }
 
-export interface PreviewFile {
-  filename: string;
-  documentbody: string;
-  mimetype: string;
-}
-
 export interface EntityMetadata {
   schemaName: string;
   logicalCollectionName: string;
@@ -66,31 +48,8 @@ export type ActivityType =
   | "recurringappointmentmaster"
   | "appointmentrecurrence";
 
-export type GenericActionResponse = {
-  success: boolean;
-  message: string;
-};
-
-export interface NoteView {
-  savedqueryid: string; // GUID
-  name: string;
-  fetchxml: string;
-}
-
-export type NoteViewSuccess = {
-  success: true;
-  data: NoteView[];
-};
-
-export type NoteViewError = {
-  success: false;
-  message: string;
-  data: [];
-};
-
-export type NoteViewResult = NoteViewSuccess | NoteViewError;
-
-export type FileAction = "edit" | "download" | "delete" | "preview" | "addToActivityAttachment";
+/** What the ribbon and context menu can do with the selected files. */
+export type FileAction = "open" | "delete";
 
 export interface DocumentLocation {
   name: string;

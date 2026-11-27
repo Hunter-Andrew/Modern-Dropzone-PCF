@@ -1,7 +1,7 @@
 {
   "name": "dropzone-pcf",
-  "version": "2.9.5",
-  "description": "Dropzone PCF control to append files to related notes",
+  "version": "3.0.1",
+  "description": "Dropzone PCF control for a record's SharePoint documents",
   "scripts": {
     "build": "pcf-scripts build",
     "clean": "pcf-scripts clean",
