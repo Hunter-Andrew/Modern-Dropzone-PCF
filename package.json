@@ -11,6 +11,7 @@
     "start": "pcf-scripts start",
     "start:watch": "pcf-scripts start watch",
     "refreshTypes": "pcf-scripts refreshTypes",
+    "pretest": "pcf-scripts refreshTypes",
     "test": "jest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
