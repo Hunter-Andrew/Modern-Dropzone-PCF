@@ -1,5 +1,5 @@
 import { IInputs } from "./generated/ManifestTypes";
-import {GenericActionResponse, NoteView} from "./Interfaces"
+import { GenericActionResponse, NoteView, NoteViewResult } from "./Interfaces";
 import { escapeXml, getEntityMetadata, isActivityType } from "./utils";
 
 export async function createRelatedNote(
@@ -93,7 +93,7 @@ export async function updateRelatedNote(
 
 export async function getNoteViews(
   context: ComponentFramework.Context<IInputs>
-): Promise<{ success: boolean; message?: string; data: any[] }> {
+): Promise<NoteViewResult> {
   try {
     const select = "$select=savedqueryid,name,fetchxml";
     const filter = "$filter=returnedtypecode eq 'annotation' and fetchxml ne null";
@@ -655,7 +655,7 @@ export async function createSharePointFolder(
   }
 }
 
-export async function createAtivityDocument(
+export async function createActivityAttachment(
   context: ComponentFramework.Context<IInputs>,
   fileName: string,
   base64: string,

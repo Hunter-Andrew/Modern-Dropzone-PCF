@@ -10,7 +10,7 @@ import {
   deleteSharePointDocument,
   createSharePointFolder,
   createSharePointLocation,
-  createAtivityDocument,
+  createActivityAttachment,
 } from "../DataverseActions";
 import {
   DocumentLocation,
@@ -290,7 +290,6 @@ export class Landing extends Component<LandingProps, LandingState> {
     option?: IComboBoxOption
   ): void => {
     if (option) {
-      //console.log(option.key);
       this.setState(
         { selectedCreateLocation: option.key as string },
         this.validateForm
@@ -730,7 +729,6 @@ export class Landing extends Component<LandingProps, LandingState> {
 
 
   addFileAttachmentToActivity = async (file: FileData | SharePointDocument) => {
-    //console.log(file);
     if (
       !("documentbody" in file) ||
       !file.documentbody ||
@@ -744,7 +742,7 @@ export class Landing extends Component<LandingProps, LandingState> {
     try {
       toast.loading("Attaching file...");
 
-      const response: GenericActionResponse = await createAtivityDocument(
+      const response: GenericActionResponse = await createActivityAttachment(
         this.props.context!,
         file.filename,
         file.documentbody,
