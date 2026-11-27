@@ -90,3 +90,16 @@ export type GenericActionResponse = {
   };
   
   export type NoteViewResult = NoteViewSuccess | NoteViewError;
+
+export type FileAction =
+  | "edit"
+  | "download"
+  | "delete"
+  | "preview"
+  | "addToActivityAttachment";
+
+export interface DocumentLocation {
+  name: string;
+  sharepointdocumentlocationid: string;
+  parentsiteid?: string;
+}

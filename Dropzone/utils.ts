@@ -134,8 +134,10 @@ export function getControlValue(
 ) {
   return context.parameters[parameter]?.raw || "";
 }
-  type Values<T> = T extends string ? T : { [K in keyof T]: Values<T[K]> }[keyof T];
-  type LocalizationKey = Values<typeof LocalStrings>;
+type Values<T> = T extends string ? T : { [K in keyof T]: Values<T[K]> }[keyof T];
+export type LocalizationKey = Values<typeof LocalStrings>;
+/** Looks up a localized string; passed to child components as `t`. */
+export type Translate = (key: LocalizationKey) => string;
 
   export const getLocalString = (
   context: ComponentFramework.Context<any>,
